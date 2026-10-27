@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Repaso parcial · Mapa de memoria MCF5272</title>
 <style>
   @media (prefers-color-scheme: dark) {
@@ -80,6 +82,7 @@
 
   .layout{ display:grid; grid-template-columns:200px 1fr; gap:28px; margin-top:24px; align-items:start; }
   @media (max-width:760px){ .layout{ grid-template-columns:1fr; } }
+  .layout > *{ min-width:0; }
 
   .rail{
     position:sticky; top:20px; display:flex; flex-direction:column; gap:6px;
@@ -150,6 +153,16 @@
   }
   .field input.ok{ border-color:var(--good); background:var(--good-soft); }
   .field input.bad{ border-color:var(--bad); background:var(--bad-soft); }
+  .field select, .stackdraw select{
+    font-family:var(--f-mono); font-size:14px; padding:7px 9px; border:1px solid var(--line);
+    border-radius:6px; background:var(--surface); color:var(--text); width:100%;
+  }
+  .stackdraw select{ min-width:220px; padding:4px 8px; font-size:13px; }
+  select.ok{ border-color:var(--good) !important; background:var(--good-soft) !important; }
+  select.bad{ border-color:var(--bad) !important; background:var(--bad-soft) !important; }
+  .stackdraw td{ padding:4px 10px; }
+  .stackdraw td.addr{ font-family:var(--f-mono); color:var(--text-muted); font-size:13px; }
+  .stackdraw tr.a7i td{ background:var(--surface-2); font-size:13px; color:var(--text-muted); }
 
   .rangepair{ display:flex; align-items:center; gap:8px; }
   .rangepair span{ color:var(--text-muted); }
@@ -201,7 +214,7 @@
       <span class="brand-mark">SDGI</span>
       <div class="brand-text">
         <h1>Repaso para el parcial</h1>
-        <p>Mapa de memoria y selección de chip (CSBR/CSOR) en el MCF5272</p>
+        <p>Mapa de memoria, CSBR/CSOR, pila y lectura de código en el MCF5272</p>
       </div>
     </div>
     <div class="countdown" id="countdown">calculando…</div>
@@ -219,10 +232,16 @@
         <span class="t">CSBR / CSOR</span><span class="s">Calculadora aleatoria</span>
       </button>
       <button class="rail-btn" data-tab="asm">
-        <span class="t">Ensamblador</span><span class="s">EA, pila, bucles y C</span>
+        <span class="t">Ensamblador</span><span class="s">Modos y dirección efectiva</span>
+      </button>
+      <button class="rail-btn" data-tab="pila">
+        <span class="t">Pila</span><span class="s">A7 en el punto M, dibujarla</span>
+      </button>
+      <button class="rail-btn" data-tab="leer">
+        <span class="t">Leer código</span><span class="s">Cuestiones U2/U3 y C</span>
       </button>
       <button class="rail-btn" data-tab="test">
-        <span class="t">Test rápido</span><span class="s">15 preguntas</span>
+        <span class="t">Test rápido</span><span class="s">Conceptos y rutinas</span>
       </button>
     </nav>
 
@@ -528,7 +547,10 @@ INICIO     MOVE.L #$00000201,D0
             <p id="ea-solution" class="mono" style="font-size:14px;"></p>
           </details>
         </div>
+      </section>
 
+      <!-- ===================== PILA ===================== -->
+      <section class="panel" id="tab-pila">
         <div class="card">
           <h3>Convenciones de pila (PEA, MOVEM, LINK/UNLK)</h3>
           <p>Tampoco está en la hoja de referencia — es lo que necesitas para rastrear el contenido de la pila en cualquier ejercicio de software.</p>
@@ -539,6 +561,8 @@ INICIO     MOVE.L #$00000201,D0
             <li><code>ADDA.L #-N,A7</code> al entrar en una subrutina → reserva N bytes de variables locales; <code>ADDA.L #N,A7</code> los libera antes del <code>RTS</code>.</li>
             <li><code>MOVEM.L regs,(A7)</code> guarda varios registros siempre en el mismo orden <strong>D0…D7, A0…A7</strong>, sin importar el orden en que los escribas en la instrucción.</li>
             <li><code>LINK An,#-m</code> ≈ apila An (4 bytes), copia A7 en An, reserva m bytes más; <code>UNLK An</code> lo deshace.</li>
+            <li><strong>Interrupción</strong> → el procesador apila 8 bytes: PC (4), SR (2) y formato/vector VF (2), en ese orden; VF queda en la dirección más baja. <code>RTE</code> los desapila.</li>
+            <li><code>N(A7)</code> dentro de una subrutina: cuenta los bytes desde el A7 <em>actual</em>. Recién entrado, <code>0(A7)</code> es el PC de retorno y <code>4(A7)</code> el último parámetro apilado; cada byte que apiles después desplaza esas distancias.</li>
           </ul>
         </div>
 
@@ -622,6 +646,41 @@ INICIO     MOVE.L #$00000201,D0
           </details>
         </div>
 
+        <div id="pila-gen" style="display:contents"></div>
+
+        <div class="card">
+          <span class="eyebrow">Práctica ilimitada · como Nov-2017 3.1 y ejercicio 1-casa 1.3</span>
+          <h2>Dibuja el contenido de la pila en el punto M</h2>
+          <p class="muted">Cada fila es una <strong>palabra (2 bytes)</strong>; las direcciones más bajas van arriba. Un dato de 4 bytes ocupa <strong>dos filas</strong> con la misma etiqueta. Marca <em>(libre)</em> las filas que quedan por encima de A7.</p>
+          <p id="drw-stmt"></p>
+          <div class="codebox" id="drw-code"></div>
+          <div class="field-row">
+            <div class="field" style="min-width:160px;">
+              <label>A7 en el punto M</label>
+              <input class="mono" id="drw-a7" placeholder="hex, sin $">
+            </div>
+          </div>
+          <div class="tablewrap stackdraw"><table id="drw-table"></table></div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkDraw()">Comprobar</button>
+            <button class="btn ghost" onclick="newDraw()">Nuevo problema</button>
+            <span class="result-chip" id="drw-score">—</span>
+          </div>
+          <details class="solution" id="drw-solwrap">
+            <summary>Ver pila resuelta</summary>
+            <div id="drw-sol" style="font-size:14px;"></div>
+          </details>
+        </div>
+      </section>
+
+      <!-- ===================== LEER CÓDIGO ===================== -->
+      <section class="panel" id="tab-leer">
+        <div class="card">
+          <span class="eyebrow">De dónde sale esto</span>
+          <h2>Leer y entender código</h2>
+          <p>Ejercicios generados con la misma forma que las <strong>cuestiones de las Unidades 2 y 3</strong> y los <strong>problemas 2.1 y 2.2</strong>: directivas, tamaños de MOVE, operaciones lógicas y desplazamientos, CCR, saltos con y sin signo, direccionamiento indirecto, C con enteros y punteros, y líneas del bus de datos. Usa la calculadora para pasar de base; lo que cuenta es entender qué hace cada instrucción.</p>
+        </div>
+
         <div class="card">
           <span class="eyebrow">Práctica ilimitada</span>
           <h2>Trazar un bucle en ensamblador</h2>
@@ -678,13 +737,15 @@ INICIO     MOVE.L #$00000201,D0
             <ul id="c-solution"></ul>
           </details>
         </div>
+
+        <div id="leer-gen" style="display:contents"></div>
       </section>
 
       <!-- ===================== TEST RÁPIDO ===================== -->
       <section class="panel" id="tab-test">
         <div class="card">
           <div class="taglist">
-            <span class="tag">MBAR/RAMBAR</span><span class="tag">CSBR/CSOR</span><span class="tag">Conceptos clave</span>
+            <span class="tag">MBAR/RAMBAR</span><span class="tag">CSBR/CSOR</span><span class="tag">Pila</span><span class="tag">Problemas U2</span><span class="tag">Conceptos clave</span>
           </div>
           <div class="btnrow" style="margin-bottom:6px;">
             <span class="scorepill">Pregunta <strong id="q-index">1</strong> / <span id="q-total">14</span></span>
@@ -729,7 +790,7 @@ INICIO     MOVE.L #$00000201,D0
   })();
 
   // ---------- helpers ----------
-  function normHex(s){ if(s===undefined||s===null) return ''; return s.toString().trim().toUpperCase().replace(/^\$/,'').replace(/^0+(?=.)/,''); }
+  function normHex(s){ if(s===undefined||s===null) return ''; return s.toString().trim().toUpperCase().replace(/^\$/,'').replace(/^0X/,'').replace(/^0+(?=.)/,''); }
   function normBit(s){ if(s===undefined||s===null) return ''; return s.toString().trim().replace(/^%/,''); }
   function hex(n,digits){ return (n>>>0).toString(16).toUpperCase().padStart(digits,'0'); }
   function setField(input, ok){ input.classList.remove('ok','bad'); input.classList.add(ok?'ok':'bad'); }
@@ -1264,6 +1325,723 @@ funcionA(varA, &varB);`;
   }
   newC();
 
+  // ================= GENERADORES GENÉRICOS (enunciado + campos + desarrollo) =================
+  function rnd(n){ return Math.floor(Math.random()*n); }
+  function pick(a){ return a[rnd(a.length)]; }
+  function hx(n){ return '$'+hex(n,8); }
+  const genCards = {};
+  function addGenCard(key, meta){
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `<span class="eyebrow">${meta.eyebrow}</span><h2>${meta.title}</h2>
+      ${meta.intro ? `<p class="muted">${meta.intro}</p>` : ''}
+      <div id="${key}-stmt"></div>
+      <div class="codebox" id="${key}-code"></div>
+      <div class="field-row" id="${key}-fields"></div>
+      <div class="btnrow">
+        <button class="btn primary" onclick="checkGen('${key}')">Comprobar</button>
+        <button class="btn ghost" onclick="newGen('${key}')">Nuevo problema</button>
+        <span class="result-chip" id="${key}-score">—</span>
+      </div>
+      <details class="solution" id="${key}-solwrap"><summary>Ver desarrollo</summary><div id="${key}-sol" style="font-size:14px;"></div></details>`;
+    document.getElementById(meta.container).appendChild(el);
+    genCards[key] = {meta, cur:null};
+    newGen(key);
+  }
+  function genPlaceholder(kind){ return {hex:'hex, sin $', dec:'decimal', bit:'0 ó 1', lines:'p. ej. D24-D31'}[kind] || ''; }
+  function newGen(key){
+    const g = genCards[key];
+    const s = g.meta.gen();
+    g.cur = s;
+    document.getElementById(key+'-stmt').innerHTML = s.stmt ? `<p>${s.stmt}</p>` : '';
+    const code = document.getElementById(key+'-code');
+    code.textContent = s.code || '';
+    code.style.display = s.code ? '' : 'none';
+    document.getElementById(key+'-fields').innerHTML = s.fields.map((f,i)=>{
+      const ctl = f.kind==='opt'
+        ? `<select data-g="${key}" data-i="${i}"><option value="">— elige —</option>${f.opts.map(o=>`<option>${o}</option>`).join('')}</select>`
+        : `<input class="mono" data-g="${key}" data-i="${i}" placeholder="${f.ph || genPlaceholder(f.kind)}">`;
+      return `<div class="field" style="min-width:${f.w||110}px;"><label>${f.label}</label>${ctl}</div>`;
+    }).join('');
+    const chip = document.getElementById(key+'-score');
+    chip.textContent = '0/'+s.fields.length; chip.className = 'result-chip';
+    document.getElementById(key+'-sol').innerHTML = s.sol;
+    document.getElementById(key+'-solwrap').open = false;
+  }
+  function genAnswerOk(f, v){
+    v = (v || '').trim();
+    if(v==='') return false;
+    if(f.kind==='hex') return normHex(v) === normHex(f.ans);
+    if(f.kind==='dec' || f.kind==='bit') return /^[+-]?\d+$/.test(v) && parseInt(v,10) === Number(f.ans);
+    if(f.kind==='lines') return (v.match(/\d+/g)||[]).map(Number).sort((a,b)=>a-b).join('-') === f.ans;
+    return v === f.ans;
+  }
+  function checkGen(key){
+    const g = genCards[key];
+    if(!g || !g.cur) return;
+    let correct = 0;
+    g.cur.fields.forEach((f,i)=>{
+      const el = document.querySelector(`[data-g="${key}"][data-i="${i}"]`);
+      const ok = genAnswerOk(f, el.value);
+      setField(el, ok);
+      if(ok) correct++;
+    });
+    const chip = document.getElementById(key+'-score');
+    chip.textContent = correct+'/'+g.cur.fields.length;
+    chip.className = 'result-chip ' + (correct===g.cur.fields.length ? 'ok' : 'bad');
+    document.getElementById(key+'-solwrap').open = true;
+  }
+  function liList(items){ return '<ul>'+items.map(x=>`<li>${x}</li>`).join('')+'</ul>'; }
+
+  // ================= PILA: ESCENARIOS CON PUNTO M =================
+  const pilaRegOrder = ['D0','D1','D2','D3','D4','D5','D6','D7','A0','A1','A2','A3','A4','A5','A6'];
+  function genPilaScenario(){
+    const a7i = pick([0x00020400,0x00101000,0x00006000,0x0000A000,0x20001000,0x00030800]);
+    let sp = a7i;
+    const stack = []; // en orden de apilado: el último tiene la dirección más baja
+    function push(label,size){ sp -= size; const it = {label,size,addr:sp}; stack.push(it); return it; }
+    const L = (lab,ins)=> (lab||'').padEnd(11)+ins;
+    const C = (ins,com)=> ins.padEnd(24)+'* '+com;
+    // Guarda 1-3 registros con MOVEM (orden fijo D0..A7) o con MOVE.L sucesivos (orden escrito)
+    function saves(name, lines, allowMovem, labelFirst){
+      const n = 1+rnd(3);
+      const regs = shuffle(['D0','D1','D2','D4','A0','A1']).slice(0,n);
+      const sorted = regs.slice().sort((a,b)=>pilaRegOrder.indexOf(a)-pilaRegOrder.indexOf(b));
+      const lab = labelFirst ? name : '';
+      if(allowMovem && Math.random()<0.55){
+        lines.push(L(lab,`ADDA.L   #-${4*n},A7`));
+        lines.push(L('',`MOVEM.L  ${regs.join('/')},(A7)`));
+        sorted.slice().reverse().forEach(r=>push(`${r} (${name})`,4));
+        return [L('',`MOVEM.L  (A7),${sorted.join('/')}`), L('',`ADDA.L   #${4*n},A7`)];
+      }
+      regs.forEach((r,i)=>{ lines.push(L(i===0?lab:'',`MOVE.L   ${r},-(A7)`)); push(`${r} (${name})`,4); });
+      return regs.slice().reverse().map(r=>L('',`MOVE.L   (A7)+,${r}`));
+    }
+
+    const main = [];
+    const paramPool = shuffle([
+      {code:'PEA      TABLA',         label:'Dir. de TABLA (PEA)', size:4, ins:'MOVEA.L  JJ(A7),A0', com:'A0 ← dirección de TABLA', what:'la dirección de TABLA'},
+      {code:'PEA      RESUL',         label:'Dir. de RESUL (PEA)', size:4, ins:'MOVEA.L  JJ(A7),A1', com:'A1 ← dirección de RESUL', what:'la dirección de RESUL'},
+      {code:'MOVE.W   #N_ELEM,-(A7)', label:'N_ELEM (MOVE.W)',     size:2, ins:'MOVE.W   JJ(A7),D5',  com:'D5 ← N_ELEM', what:'N_ELEM'},
+      {code:'MOVE.L   D3,-(A7)',      label:'D3 (PRINCIPAL)',      size:4, ins:'MOVE.L   JJ(A7),D6',  com:'D6 ← D3 apilado', what:'el D3 que apiló PRINCIPAL'},
+    ]);
+    const params = paramPool.slice(0, pick([0,1,2,2,3]));
+    params.forEach((p,i)=>{ main.push(L(i===0?'PRINCIPAL':'', p.code)); p.item = push(p.label,p.size); });
+    main.push(L(params.length?'':'PRINCIPAL','BSR      SUB1'));
+    push('PC retorno (BSR SUB1)',4);
+    const pbytes = params.reduce((a,p)=>a+p.size,0);
+    if(pbytes) main.push(L('',`ADDA.L   #${pbytes},A7`));
+    main.push(L('','...'));
+
+    const sub1 = [];
+    const rest1 = saves('SUB1', sub1, true, true);
+    let jj = null;
+    if(params.length){
+      const p = pick(params);
+      jj = {val: p.item.addr - sp, what: p.what};
+      sub1.push(L('', C(p.ins, p.com)));
+    }
+    const blocks = [];
+    const mode = pick(['hoja','anidada','anidada','int','int']);
+    let intName = null, whereM = 'SUB1';
+    if(mode==='hoja'){
+      sub1.push(L('', C('CLR.L    D2','◄ punto M')));
+    } else if(mode==='anidada'){
+      sub1.push(L('','BSR      SUB2'));
+      push('PC retorno (BSR SUB2)',4);
+      const sub2 = [];
+      const locals = Math.random()<0.4;
+      if(locals){
+        sub2.push(L('SUB2', C('ADDA.L   #-8,A7','2 variables locales')));
+        push('Var. local (SUB2)',4); push('Var. local (SUB2)',4);
+      }
+      const rest2 = saves('SUB2', sub2, !locals, !locals);
+      sub2.push(L('', C('MOVE.L   #$10,D0','◄ punto M')));
+      sub2.push(L('','...'));
+      rest2.forEach(x=>sub2.push(x));
+      if(locals) sub2.push(L('','ADDA.L   #8,A7'));
+      sub2.push(L('','RTS'));
+      blocks.push(sub2);
+      whereM = 'SUB2';
+    } else {
+      intName = pick(['INT1','INT3','INT5','TIMER1','UART1']);
+      const rut = 'RUT_'+intName;
+      sub1.push(L('', C('ADD.L    D1,D2',`◄ aquí llega ${intName}`)));
+      push(`PC (${intName})`,4); push(`SR (${intName})`,2); push(`VF (${intName})`,2);
+      const isr = [];
+      const restI = saves(rut, isr, true, true);
+      if(Math.random()<0.5){
+        isr.push(L('','BSR      AUX'));
+        push('PC retorno (BSR AUX)',4);
+        const aux = [];
+        const restA = saves('AUX', aux, false, true);
+        aux.push(L('', C('CLR.L    D0','◄ punto M')));
+        aux.push(L('','...'));
+        restA.forEach(x=>aux.push(x));
+        aux.push(L('','RTS'));
+        isr.push(L('','...')); restI.forEach(x=>isr.push(x)); isr.push(L('','RTE'));
+        blocks.push(isr, aux);
+        whereM = 'AUX';
+      } else {
+        isr.push(L('', C('MOVE.B   D0,ESTADO','◄ punto M')));
+        isr.push(L('','...')); restI.forEach(x=>isr.push(x)); isr.push(L('','RTE'));
+        blocks.push(isr);
+        whereM = rut;
+      }
+    }
+    sub1.push(L('','...'));
+    rest1.forEach(x=>sub1.push(x));
+    sub1.push(L('','RTS'));
+
+    const code = `* Al llegar a PRINCIPAL: A7 = ${hx(a7i)} (FINPILA)\n\n` + [main, sub1].concat(blocks).map(b=>b.join('\n')).join('\n\n');
+    const intro = intName
+      ? `La interrupción <strong>${intName}</strong> está habilitada y llega mientras SUB1 ejecuta la instrucción marcada. El punto M está en <strong>${whereM}</strong>.`
+      : `El punto M está en <strong>${whereM}</strong> (justo cuando termina esa instrucción).`;
+    return {a7i, a7m:sp, stack, code, jj, intro};
+  }
+  function pilaBreakdown(sc){
+    const rows = sc.stack.slice().reverse().map(it=>`<tr><td class="hex">${hx(it.addr)}</td><td>${it.label}</td><td>${it.size}</td></tr>`).join('');
+    const total = sc.a7i - sc.a7m;
+    return `<div class="tablewrap"><table><tr><th>Dirección</th><th>Contenido</th><th>Bytes</th></tr>${rows}</table></div>
+      <p class="muted" style="margin-top:8px;">Total apilado: ${total} bytes → A7 en M = ${hx(sc.a7i)} − ${total} = <strong>${hx(sc.a7m)}</strong>.</p>`;
+  }
+
+  addGenCard('a7m', {
+    container:'pila-gen', eyebrow:'Práctica ilimitada · como el problema 2.1 (punto M)',
+    title:'¿Cuánto vale A7 en el punto M? ¿Y el desplazamiento JJ?',
+    intro:'Suma todo lo que se ha apilado desde el A7 inicial: parámetros, PC de retorno de cada BSR, registros guardados y, si hay interrupción, sus 8 bytes. <code>JJ</code> es la distancia desde el A7 <em>de ese momento</em> hasta el dato que se quiere leer.',
+    gen(){
+      const sc = genPilaScenario();
+      const fields = [{label:'A7 en el punto M', kind:'hex', ans:hex(sc.a7m,8), w:160}];
+      const sol = [pilaBreakdown(sc)];
+      if(sc.jj){
+        fields.push({label:'JJ (decimal)', kind:'dec', ans:String(sc.jj.val), w:120});
+        sol.push(`<p><strong>JJ = ${sc.jj.val}</strong>: es el número de bytes que hay entre el A7 en la instrucción <code>JJ(A7)</code> y ${sc.jj.what}. Cuenta solo lo apilado <em>encima</em> de ese dato hasta ese momento (registros guardados en SUB1, PC de retorno y los parámetros apilados después).</p>`);
+      }
+      return {stmt: sc.intro + (sc.jj ? ' Calcula también <code>JJ</code>.' : ''), code: sc.code, fields, sol: sol.join('')};
+    }
+  });
+
+  addGenCard('bsr', {
+    container:'pila-gen', eyebrow:'Práctica ilimitada · como la cuestión 12 de la U2',
+    title:'¿Qué apila un BSR y adónde vuelve el RTS?',
+    intro:'BSR apila la dirección de la <strong>instrucción siguiente</strong> (dirección del BSR + lo que ocupa el BSR) y salta. RTS desapila ese valor en el PC.',
+    gen(){
+      const size = pick([2,4,6]);
+      const ins = size===6 ? 'JSR      RUT6' : 'BSR      RUT6';
+      const x = (((1+rnd(0xFE))<<16) | (rnd(0x7000)<<1)) >>> 0;
+      const y = (x + 0x200 + rnd(0x800)*2) >>> 0;
+      const a7 = pick([0x00020400,0x00101000,0x0000A000,0x20001000]) - 4*(1+rnd(5));
+      const code = `* A7 = ${hx(a7)} justo antes de ejecutar el ${ins.split(' ')[0]}\n\n`+
+        `${hx(x)}            ${ins}\n${hx(x+size)}            MOVE.L   D0,D1\n                     ...\n${hx(y)}  RUT6      MOVE.L   #2908,D6\n                     ...\n                     RTS`;
+      return {
+        stmt:`La instrucción <code>${ins.split(' ')[0]}</code> ocupa <strong>${size} bytes</strong> en memoria. Contesta para el momento justo después de ejecutarla y para cuando termina el RTS.`,
+        code,
+        fields:[
+          {label:'PC tras el '+ins.split(' ')[0], kind:'hex', ans:hex(y,8), w:150},
+          {label:'A7 tras el '+ins.split(' ')[0], kind:'hex', ans:hex(a7-4,8), w:150},
+          {label:'Contenido de (A7) — long', kind:'hex', ans:hex(x+size,8), w:170},
+          {label:'PC tras el RTS', kind:'hex', ans:hex(x+size,8), w:150},
+        ],
+        sol: liList([
+          `PC = dirección de RUT6 = <strong>${hx(y)}</strong> (salta a la subrutina).`,
+          `A7 = ${hx(a7)} − 4 = <strong>${hx(a7-4)}</strong> (se apila un long).`,
+          `(A7) = dirección de retorno = ${hx(x)} + ${size} = <strong>${hx(x+size)}</strong>, la instrucción siguiente al ${ins.split(' ')[0]}.`,
+          `RTS desapila ese long al PC → <strong>${hx(x+size)}</strong>, y A7 vuelve a ${hx(a7)}.`])
+      };
+    }
+  });
+
+  // ================= PILA: DIBUJAR =================
+  let currentDraw = null;
+  function newDraw(){
+    const sc = genPilaScenario();
+    const rows = [];
+    for(let a = sc.a7m - 4; a < sc.a7i; a += 2){
+      const it = sc.stack.find(s=>s.addr <= a && a < s.addr + s.size);
+      rows.push({addr:a, ans: it ? it.label : '(libre)'});
+    }
+    const opts = Array.from(new Set(sc.stack.map(s=>s.label))).sort().concat(['(libre)']);
+    currentDraw = {sc, rows};
+    document.getElementById('drw-stmt').innerHTML = sc.intro;
+    document.getElementById('drw-code').textContent = sc.code;
+    document.getElementById('drw-table').innerHTML =
+      '<tr><th>Dirección</th><th>Contenido (palabra)</th></tr>' +
+      rows.map((r,i)=>`<tr><td class="addr">${hx(r.addr)}</td><td><select data-drw="${i}"><option value="">—</option>${opts.map(o=>`<option>${o}</option>`).join('')}</select></td></tr>`).join('') +
+      `<tr class="a7i"><td class="addr">${hx(sc.a7i)}</td><td>← A7 inicial (aquí no se escribe nada)</td></tr>`;
+    const a7 = document.getElementById('drw-a7');
+    a7.value = ''; a7.classList.remove('ok','bad');
+    const chip = document.getElementById('drw-score');
+    chip.textContent = '0/'+(rows.length+1); chip.className = 'result-chip';
+    document.getElementById('drw-sol').innerHTML = pilaBreakdown(sc);
+    document.getElementById('drw-solwrap').open = false;
+  }
+  function checkDraw(){
+    if(!currentDraw) return;
+    let correct = 0;
+    currentDraw.rows.forEach((r,i)=>{
+      const el = document.querySelector(`[data-drw="${i}"]`);
+      const ok = el.value === r.ans;
+      setField(el, ok);
+      if(ok) correct++;
+    });
+    const a7 = document.getElementById('drw-a7');
+    const okA7 = normHex(a7.value) === normHex(hex(currentDraw.sc.a7m,8)) && a7.value.trim()!=='';
+    setField(a7, okA7);
+    if(okA7) correct++;
+    const total = currentDraw.rows.length + 1;
+    const chip = document.getElementById('drw-score');
+    chip.textContent = correct+'/'+total;
+    chip.className = 'result-chip ' + (correct===total ? 'ok' : 'bad');
+    document.getElementById('drw-solwrap').open = true;
+  }
+  newDraw();
+
+  // ================= LEER CÓDIGO: DIRECTIVAS DC (cuestiones U2 1-2) =================
+  addGenCard('dir', {
+    container:'leer-gen', eyebrow:'Cuestiones U2 · 1 y 2',
+    title:'Directivas: ¿qué byte hay en cada dirección?',
+    intro:'ColdFire es <strong>big-endian</strong> (el byte más significativo va en la dirección más baja). <code>EQU</code> no ocupa memoria. Código ASCII de un dígito = dígito + $30. Aquí las directivas no se alinean: cada una empieza justo donde acaba la anterior.',
+    gen(){
+      const labels = shuffle(['OCHOS','COLOR','NIVELES','TIEMPO','DIGITO','PAGINA','CARAC','SESION','CLAVES','DORSAL','PARAM','TECLA','LIMITE','CODIGO']);
+      const types = shuffle(['B','B','W','L',pick(['B','W','L']),'EQU']);
+      const bytes = []; // {v, q (se puede preguntar), line}
+      const lines = [];
+      const sol = [];
+      types.forEach((t,li)=>{
+        const lab = labels[li].padEnd(9);
+        const start = bytes.length;
+        if(t==='EQU'){ lines.push(`${lab}EQU    ${1+rnd(9)}`); sol.push(`<code>${labels[li]} EQU</code> → no ocupa memoria`); return; }
+        if(t==='B'){
+          const items = [];
+          const n = 1+rnd(3);
+          for(let k=0;k<n;k++){
+            const kind = pick(['str','chr','dec','hex']);
+            if(kind==='str'){
+              const s = pick(['0x','$','']) + String(rnd(100));
+              items.push(`"${s}"`);
+              for(const ch of s) bytes.push({v:ch.charCodeAt(0), q:/\d/.test(ch)});
+            } else if(kind==='chr'){
+              const d = rnd(10); items.push(`'${d}'`); bytes.push({v:0x30+d, q:true});
+            } else if(kind==='dec'){
+              const d = rnd(100); items.push(String(d)); bytes.push({v:d, q:true});
+            } else {
+              const d = rnd(256); items.push('$'+d.toString(16).toUpperCase()); bytes.push({v:d, q:true});
+            }
+          }
+          lines.push(`${lab}DC.B   ${items.join(',')}`);
+        } else {
+          const sz = t==='W' ? 2 : 4;
+          const v = t==='W' ? rnd(10000) : rnd(200000);
+          const txt = Math.random()<0.5 ? String(v) : '$'+v.toString(16).toUpperCase();
+          lines.push(`${lab}DC.${t}   ${txt}`);
+          for(let k=sz-1;k>=0;k--) bytes.push({v:(v>>>(8*k))&0xFF, q:true});
+        }
+        sol.push(`<code>${labels[li]}</code> ocupa ${bytes.length-start} byte(s): ${bytes.slice(start).map(b=>'$'+hex(b.v,2)).join(' ')}`);
+      });
+      const lastLab = labels[types.length];
+      const base = (((1+rnd(0x3E))<<24) | (rnd(0xFFFF)<<8) | (rnd(16)<<4)) >>> 0;
+      const back = Math.random()<0.5;
+      lines.push(`${lastLab.padEnd(9)}DC.L   ...`);
+      const head = back ? '' : `         ORG    ${hx(base)}\n`;
+      const qs = shuffle(bytes.map((b,i)=>i).filter(i=>bytes[i].q)).slice(0,3).sort((a,b)=>a-b);
+      const stmt = back
+        ? `<code>${lastLab}</code> representa la dirección <strong>${hx(base+bytes.length)}</strong>. Determina el byte en hexadecimal de las direcciones indicadas.`
+        : 'Determina el byte en hexadecimal de las direcciones indicadas.';
+      sol.unshift(back ? `Se cuenta hacia atrás: hay ${bytes.length} bytes antes de ${lastLab}, así que todo empieza en ${hx(base+bytes.length)} − ${bytes.length} = ${hx(base)}.` : `Todo empieza en ${hx(base)}.`);
+      qs.forEach(i=>sol.push(`[${hx(base+i)}] = <strong>$${hex(bytes[i].v,2)}</strong> (byte ${i} contando desde ${hx(base)})`));
+      return {
+        stmt, code: head + lines.join('\n'),
+        fields: qs.map(i=>({label:`[${hx(base+i)}]`, kind:'hex', ans:hex(bytes[i].v,2), w:130})),
+        sol: liList(sol)
+      };
+    }
+  });
+
+  // ================= LEER CÓDIGO: TAMAÑO DE MOVE (cuestiones U2 3-4) =================
+  addGenCard('mov', {
+    container:'leer-gen', eyebrow:'Cuestiones U2 · 3 y 4',
+    title:'MOVE.B / .W / .L: ¿qué queda en cada registro?',
+    intro:'<code>MOVE.B</code> y <code>MOVE.W</code> sobre un Dn solo cambian el byte o la palabra baja; el resto del registro se conserva. <code>#ETIQ</code> es la <strong>dirección</strong> (o el valor del EQU); <code>ETIQ</code> sin # es el <strong>contenido</strong> de memoria.',
+    gen(){
+      const [dx,dt,dy,dz] = shuffle(['D0','D1','D2','D3','D4','D5','D6','D7']).slice(0,4);
+      const aa = pick(['A1','A2','A3','A4']);
+      const addr = (((1+rnd(0x7E))<<16) | (rnd(0x3FFF)<<2)) >>> 0;
+      const cte1 = 1000 + rnd(60000000);
+      const cte2 = 0x10000 + rnd(0xF0000);
+      const imm3 = 100000 + rnd(900000);
+      const s1 = pick(['B','W']), s2 = pick(['B','W']);
+      const R = {};
+      const write = (r,size,v)=>{ const old = R[r]||0; R[r] = size==='L' ? v>>>0 : size==='W' ? ((old & 0xFFFF0000) | (v & 0xFFFF))>>>0 : ((old & 0xFFFFFF00) | (v & 0xFF))>>>0; };
+      const memRead = size => size==='B' ? cte1>>>24 : size==='W' ? cte1>>>16 : cte1>>>0;
+      const tr = [];
+      R[aa] = addr;                    tr.push(`${aa} = dirección de CTE1 = ${hx(addr)}`);
+      write(dx,'L',cte2);              tr.push(`${dx} = valor del EQU = ${hx(R[dx])}`);
+      write(dt,'L',R[dx]);             tr.push(`${dt} = ${dx} = ${hx(R[dt])}`);
+      write(dy,'L',imm3);              tr.push(`${dy} = ${imm3} = ${hx(R[dy])}`);
+      write(dx,s1,memRead(s1));        tr.push(`MOVE.${s1} (${aa}),${dx}: lee ${s1==='B'?'1 byte':'2 bytes'} de ${hx(addr)} (CTE1 = ${hx(cte1)}, big-endian) y solo cambia la parte baja → ${dx} = ${hx(R[dx])}`);
+      R[aa] = R[dy];                   tr.push(`${aa} = ${dy} = ${hx(R[aa])}`);
+      write(dy,s2,R[dt]);              tr.push(`MOVE.${s2} ${dt},${dy}: copia la ${s2==='B'?'parte baja (byte)':'palabra baja'} de ${dt} → ${dy} = ${hx(R[dy])}`);
+      const byContent = Math.random()<0.5;
+      write(dz,'L', byContent ? cte1 : addr);
+      tr.push(byContent ? `MOVE.L CTE1,${dz} (sin #): contenido de memoria → ${dz} = ${hx(R[dz])}` : `MOVE.L #CTE1,${dz} (con #): la dirección → ${dz} = ${hx(R[dz])}`);
+      const code =
+`         ORG     ${hx(addr)}
+CTE1     DC.L    ${cte1}
+CTE2     EQU     $${cte2.toString(16).toUpperCase()}
+         ...
+         MOVEA.L #CTE1,${aa}
+         MOVE.L  #CTE2,${dx}
+         MOVE.L  ${dx},${dt}
+         MOVE.L  #${imm3},${dy}
+         MOVE.${s1}  (${aa}),${dx}
+         MOVEA.L ${dy},${aa}
+         MOVE.${s2}  ${dt},${dy}
+         MOVE.L  ${byContent?'':'#'}CTE1,${dz}`;
+      return {
+        stmt:`Determina el contenido hexadecimal de ${dx}, ${dy}, ${dz} y ${aa} tras ejecutar:`,
+        code,
+        fields:[dx,dy,dz,aa].map(r=>({label:r, kind:'hex', ans:hex(R[r],8), w:130})),
+        sol: liList(tr)
+      };
+    }
+  });
+
+  // ================= LEER CÓDIGO: LÓGICAS Y DESPLAZAMIENTOS (cuestiones U2 5-6) =================
+  addGenCard('log', {
+    container:'leer-gen', eyebrow:'Cuestiones U2 · 5 y 6',
+    title:'AND, OR, EOR, NOT y desplazamientos',
+    intro:'<code>OP Ds,Dd</code> deja el resultado en el <strong>segundo</strong> operando. Sin sufijo, el tamaño es .L. <code>LSR</code> mete ceros por la izquierda; <code>ASR</code> copia el bit de signo. Con <code>LSL Dn,Dm</code> el número de posiciones está en Dn.',
+    gen(){
+      const regs = shuffle(['D0','D1','D2','D5','D6','D7']);
+      const R = {}, lines = [], tr = [];
+      const imm = ()=> Math.random()<0.5 ? {t:'$'+(rnd(0xFFFFFF)+1).toString(16).toUpperCase(), v:0} : {t:String(-(1+rnd(5000))), v:0};
+      function set(r,v,txt){ R[r] = v>>>0; lines.push(txt); tr.push(`${txt.padEnd(18)} → ${r} = ${hx(R[r])}`); }
+      const i1 = imm(); i1.v = i1.t[0]==='$' ? parseInt(i1.t.slice(1),16) : parseInt(i1.t,10);
+      set(regs[0], i1.v, `MOVE.L  #${i1.t},${regs[0]}`);
+      set(regs[1], R[regs[0]], `MOVE.L  ${regs[0]},${regs[1]}`);
+      const i2 = imm(); i2.v = i2.t[0]==='$' ? parseInt(i2.t.slice(1),16) : parseInt(i2.t,10);
+      set(regs[2], i2.v, `MOVE.L  #${i2.t},${regs[2]}`);
+      const cnt = regs[3], cntVal = 2+rnd(8);
+      let cntUsed = false;
+      for(let k=0;k<6;k++){
+        const def = [regs[0],regs[1],regs[2]];
+        const s = pick(def), d = pick(def.filter(r=>r!==s));
+        const op = pick(['OR','AND','EOR','NOT','LSL','LSR','ASR','MOVE','LSLR']);
+        if(op==='OR')  set(d, R[d] | R[s], `OR      ${s},${d}`);
+        if(op==='AND') set(d, R[d] & R[s], `AND     ${s},${d}`);
+        if(op==='EOR') set(d, R[d] ^ R[s], `EOR     ${s},${d}`);
+        if(op==='NOT') set(d, ~R[d], `NOT     ${d}`);
+        if(op==='MOVE') set(d, R[s], `MOVE.L  ${s},${d}`);
+        if(op==='LSL' || op==='LSR' || op==='ASR'){
+          const n = 1+rnd(12);
+          const v = op==='LSL' ? R[d] << n : op==='LSR' ? R[d] >>> n : (R[d]|0) >> n;
+          set(d, v, `${op}     #${n},${d}`);
+        }
+        if(op==='LSLR'){
+          if(!cntUsed){ set(cnt, cntVal, `MOVE.L  #${cntVal},${cnt}`); cntUsed = true; }
+          set(d, R[d] << cntVal, `LSL     ${cnt},${d}`);
+        }
+      }
+      const asked = Object.keys(R).sort();
+      return {
+        stmt:`Determina el contenido hexadecimal de ${asked.join(', ')} tras ejecutar:`,
+        code: lines.join('\n'),
+        fields: asked.map(r=>({label:r, kind:'hex', ans:hex(R[r],8), w:130})),
+        sol: `<div class="codebox">${tr.join('\n')}</div>`
+      };
+    }
+  });
+
+  // ================= LEER CÓDIGO: CCR (cuestión U2 7) =================
+  addGenCard('ccr', {
+    container:'leer-gen', eyebrow:'Cuestión U2 · 7',
+    title:'Resultado y bits N, Z, V, C tras ADD / SUB',
+    intro:'<strong>C</strong> = acarreo/préstamo mirando los números <em>sin signo</em>. <strong>V</strong> = desbordamiento mirando los números <em>con signo</em> (dos positivos dan negativo, etc.). <strong>N</strong> = bit 31 del resultado. <strong>Z</strong> = resultado cero. <code>SUB Ds,Dd</code> hace Dd − Ds.',
+    gen(){
+      const special = [0,1,2,0xFFFFFFFF,0xFFFFFFFE,0x7FFFFFFF,0x80000000,0x7FFFFFFE,0x40000000,0xC0000000];
+      const val = ()=> Math.random()<0.65 ? pick(special) : (rnd(0x10000)<<16 | rnd(0x10000))>>>0;
+      const a = val(), b = val();
+      const op = pick(['ADD','SUB']);
+      let r, C, V;
+      if(op==='ADD'){ r = (a+b)>>>0; C = a+b > 0xFFFFFFFF; V = ((a^r)&(b^r)&0x80000000)!==0; }
+      else { r = (a-b)>>>0; C = b > a; V = ((a^b)&(a^r)&0x80000000)!==0; }
+      const N = r>>>31, Z = r===0 ? 1 : 0;
+      const code = `MOVE.L  #${hx(a)},D3\nMOVE.L  #${hx(b)},D2\n${op}.L   D2,D3`;
+      const sa = a|0, sb = b|0;
+      return {
+        stmt:'Determina D3 y los bits N, Z, V y C del CCR tras la última instrucción.',
+        code,
+        fields:[{label:'D3', kind:'hex', ans:hex(r,8), w:130},{label:'N',kind:'bit',ans:String(N),w:60},{label:'Z',kind:'bit',ans:String(Z),w:60},{label:'V',kind:'bit',ans:String(V?1:0),w:60},{label:'C',kind:'bit',ans:String(C?1:0),w:60}],
+        sol: liList([
+          `${op==='ADD'?'D3 + D2':'D3 − D2'} = ${hx(a)} ${op==='ADD'?'+':'−'} ${hx(b)} = <strong>${hx(r)}</strong>`,
+          `Sin signo: ${a>>>0} ${op==='ADD'?'+':'−'} ${b>>>0} → ${op==='ADD' ? (C?'no cabe en 32 bits':'cabe en 32 bits') : (C?'el sustraendo es mayor: hay préstamo':'no hay préstamo')} → <strong>C = ${C?1:0}</strong>`,
+          `Con signo: ${sa} ${op==='ADD'?'+':'−'} ${sb} = ${op==='ADD'?sa+sb:sa-sb} → ${V?'fuera de':'dentro de'} [−2³¹, 2³¹−1] → <strong>V = ${V?1:0}</strong>`,
+          `<strong>N = ${N}</strong> (bit 31 del resultado) · <strong>Z = ${Z}</strong>`])
+      };
+    }
+  });
+
+  // ================= LEER CÓDIGO: SALTOS CON Y SIN SIGNO (cuestiones U2 10-11) =================
+  addGenCard('brc', {
+    container:'leer-gen', eyebrow:'Cuestiones U2 · 10 y 11',
+    title:'Saltos condicionales: ¿salta o no salta?',
+    intro:'<code>CMP Ds,Dd</code> calcula Dd − Ds sin guardar el resultado. Los saltos <strong>HI, LS, CC (HS), CS (LO)</strong> comparan <em>sin signo</em>; <strong>GT, GE, LT, LE</strong> comparan <em>con signo</em>. Usa la tabla de saltos de tu hoja de referencia.',
+    gen(){
+      const cc = pick(['CS','CC','HI','LS','GT','GE','LT','LE','EQ','NE']);
+      const [rd, rs] = shuffle(['D1','D2','D5','D6','D7']).slice(0,2);
+      let a = rnd(401)-200, b = rnd(401)-200;
+      if(Math.random()<0.4) b = -Math.sign(a||1)*(1+rnd(200));
+      if(Math.random()<0.1) b = a;
+      const ua = a>>>0, ub = b>>>0;
+      const cond = {CS: ua<ub, CC: ua>=ub, HI: ua>ub, LS: ua<=ub, GT: a>b, GE: a>=b, LT: a<b, LE: a<=b, EQ: a===b, NE: a!==b}[cc];
+      const c = 100+rnd(200), d = 100+rnd(200);
+      const fin = cond ? {[rd]:a, [rs]:b} : {[rd]:c, [rs]:d};
+      const signed = ['GT','GE','LT','LE'].includes(cc), unsigned = ['CS','CC','HI','LS'].includes(cc);
+      const code =
+`        MOVE.L  #${a},${rd}
+        MOVE.L  #${b},${rs}
+        CMP     ${rs},${rd}
+        B${cc}     SALTO
+        MOVE.L  #${c},${rd}
+        MOVE.L  #${d},${rs}
+        ...
+SALTO   ...`;
+      return {
+        stmt:`Determina el contenido decimal de ${rd} y ${rs} al llegar a SALTO.`,
+        code,
+        fields:[{label:rd,kind:'dec',ans:String(fin[rd])},{label:rs,kind:'dec',ans:String(fin[rs])}],
+        sol: liList([
+          `CMP ${rs},${rd} compara ${rd} (${a}) con ${rs} (${b}).`,
+          signed ? `B${cc} es <strong>con signo</strong>: ${a} frente a ${b}.` :
+          unsigned ? `B${cc} es <strong>sin signo</strong>: ${rd} = ${hx(ua)} (${ua}) frente a ${rs} = ${hx(ub)} (${ub}). Un negativo, visto sin signo, es un número enorme.` :
+          `B${cc} solo mira si son iguales (Z).`,
+          `La condición ${cond?'se cumple → <strong>salta</strong>':'no se cumple → <strong>no salta</strong>'}, así que ${rd} = <strong>${fin[rd]}</strong> y ${rs} = <strong>${fin[rs]}</strong>.`])
+      };
+    }
+  });
+
+  // ================= LEER CÓDIGO: MEMORIA E INDIRECCIONES (cuestión U2 9) =================
+  addGenCard('ind', {
+    container:'leer-gen', eyebrow:'Cuestión U2 · 9',
+    title:'Direccionamiento indirecto: ¿cómo queda la memoria?',
+    intro:'<code>d(An)</code> accede a la dirección An + d (An no cambia). <code>MOVEA.L (An),Ak</code> carga en Ak el <strong>contenido</strong> de esa dirección, que aquí puede ser a su vez otra dirección: un puntero.',
+    gen(){
+      const B = ((((1+rnd(0x0E))<<24) | (rnd(0xFFFFF)<<4)) >>> 0);
+      const addr = i => (B + 4*i) >>> 0;
+      const mem = [0,1,2,3].map(()=> (rnd(0x10000)<<16 | rnd(0x10000)) >>> 0);
+      const p = rnd(4); let q = rnd(3); if(q>=p) q++;
+      mem[p] = addr(q);
+      const memIni = mem.slice();
+      const [i6, i0] = shuffle([0,1,2,3]).slice(0,2);
+      const A = {A6:addr(i6), A0:addr(i0)}, Aini = Object.assign({}, A);
+      const D = {};
+      const lines = [], tr = [];
+      const ea = (ar,t)=>{ const d = addr(t) - A[ar]; return (d===0 ? '' : d) + '('+ar+')'; };
+      const cellOf = v => [0,1,2,3].find(i=>addr(i)===v);
+      // Cada op devuelve false (sin efecto) si repetiría una línea ya escrita
+      const add = (txt, eff)=>{ if(lines.includes(txt)) return false; lines.push(txt); tr.push(`${txt.padEnd(22)} ${eff}`); return true; };
+      function opLD(){ const ar = pick(Object.keys(A)), t = rnd(4), dn = pick(['D1','D6','D7']); if(!add(`MOVE.L  ${ea(ar,t)},${dn}`, `${dn} ← [${hx(addr(t))}] = ${hx(mem[t])}`)) return false; D[dn] = mem[t]; return true; }
+      function opST(){ const dn = pick(Object.keys(D)), ar = pick(Object.keys(A)), t = rnd(4); if(!add(`MOVE.L  ${dn},${ea(ar,t)}`, `[${hx(addr(t))}] ← ${hx(D[dn])}`)) return false; mem[t] = D[dn]; return true; }
+      function opLDA(){
+        const cand = [0,1,2,3].filter(t=>cellOf(mem[t])!==undefined);
+        if(!cand.length) return false;
+        const t = pick(cand), ar = pick(Object.keys(A)), ay = A.A1===undefined ? 'A1' : 'A2';
+        if(!add(`MOVEA.L ${ea(ar,t)},${ay}`, `${ay} ← [${hx(addr(t))}] = ${hx(mem[t])} (un puntero)`)) return false;
+        A[ay] = mem[t]; return true;
+      }
+      function opSTA(){ const ay = pick(Object.keys(A)), ar = pick(Object.keys(A)), t = rnd(4); if(!add(`MOVE.L  ${ay},${ea(ar,t)}`, `[${hx(addr(t))}] ← ${ay} = ${hx(A[ay])}`)) return false; mem[t] = A[ay]; return true; }
+      opLD(); opLDA();
+      for(let done=0, tries=0; done<6 && tries<60; tries++) if(pick([opLD,opLD,opST,opST,opLDA,opSTA])()) done++;
+      const before = `A6 = ${hx(Aini.A6)}\nA0 = ${hx(Aini.A0)}\n\n` + memIni.map((v,i)=>`[${hx(addr(i))}] = ${hx(v)}`).join('\n') + '\n\n' + lines.join('\n');
+      return {
+        stmt:'Estado inicial de registros y memoria arriba; después, las instrucciones. Determina el contenido (long) de las cuatro direcciones al terminar.',
+        code: before,
+        fields: [0,1,2,3].map(i=>({label:`[${hx(addr(i))}]`, kind:'hex', ans:hex(mem[i],8), w:140})),
+        sol: `<div class="codebox">${tr.join('\n')}</div>`
+      };
+    }
+  });
+
+  // ================= LEER CÓDIGO: C CON ENTEROS (cuestiones U2 13-14) =================
+  function tryCInt(){
+    const vs = pick([['a','b','c','d'],['e','f','g','h'],['p','q','r','s']]);
+    const val = {}, lines = [], tr = [];
+    const okInt = x => Number.isInteger(x) && x >= -2147483648 && x <= 2147483647;
+    const negHex = ()=>{ const k = 1+rnd(0x7F); return {t:'0x'+hex(-k,8), v:-k}; };
+    const order = shuffle(vs.slice());
+    function emit(txt, v, res){ if(!okInt(res)) throw 0; val[v] = res; lines.push(txt); tr.push(`${txt.padEnd(24)} → ${v} = ${res}`); }
+    const h = negHex();
+    emit(`${order[0]} = ${h.t};`, order[0], h.v);
+    if(Math.random()<0.5){ const x = 0x10+rnd(0x30), y = rnd(30); emit(`${order[1]} = 0x${x.toString(16).toUpperCase()} + ${y};`, order[1], x+y); }
+    else { const x = 2+rnd(30); emit(`${order[1]} = ${x};`, order[1], x); }
+    const steps = 5+rnd(2);
+    for(let k=0;k<steps;k++){
+      const assigned = vs.filter(v=>v in val), un = vs.filter(v=>!(v in val));
+      const mustNew = un.length && (un.length >= steps-k || Math.random()<0.45);
+      const u = pick(assigned), w = pick(assigned);
+      if(mustNew){
+        const t = pick(un);
+        const tpl = pick(['addHex','mod','shl','mul']);
+        if(tpl==='addHex'){ const c = negHex(); emit(`${t} = ${u} + ${c.t};`, t, val[u]+c.v); }
+        if(tpl==='mod'){ if(val[w]===0 || u===w) throw 0; const K = pick([-9,-6,-3,2,5,7]); emit(`${t} = ${K} + (${u} % ${w});`, t, K + (val[u] % val[w])); }
+        if(tpl==='shl'){
+          const m = 1+rnd(10), n = val[w] - m*val[u];
+          if(val[u] < 0 || n < 0 || n > 20) throw 0;
+          emit(`${t} = ${u} << (${w} - ${m} * ${u});`.replace(' 1 * ',' '), t, val[u]*Math.pow(2,n));
+        }
+        if(tpl==='mul'){ const m = 2+rnd(8); emit(`${t} = ${u} * (-${m});`, t, val[u]*-m); }
+      } else {
+        const t = pick(assigned);
+        const tpl = pick(['not','selfShl','mulAdd','sub','mod']);
+        if(tpl==='not') emit(`${t} += (~${u});`, t, val[t] + (~val[u]));
+        if(tpl==='selfShl'){ const n = 1+rnd(3); emit(`${t} += (${t} << ${n});`, t, val[t] + val[t]*Math.pow(2,n)); }
+        if(tpl==='mulAdd'){ const m = 2+rnd(8); emit(`${t} += ${u} * (-${m});`, t, val[t] + val[u]*-m); }
+        if(tpl==='sub') emit(`${t} -= ${u};`, t, val[t] - val[u]);
+        if(tpl==='mod'){ if(val[w]===0 || u===w) throw 0; emit(`${t} = -3 + (${u} % ${w});`, t, -3 + (val[u] % val[w])); }
+      }
+    }
+    if(vs.some(v=>!(v in val))) throw 0;
+    return {vs, val, lines, tr};
+  }
+  addGenCard('cint', {
+    container:'leer-gen', eyebrow:'Cuestiones U2 · 13 y 14',
+    title:'C con enteros: ~, <<, % y complemento a 2',
+    intro:'<code>0xFFFFFFF0</code> guardado en un <code>int32_t</code> vale −16. <code>~x</code> = −x − 1. <code>%</code> conserva el signo del dividendo. <code>x &lt;&lt; n</code> = x · 2ⁿ.',
+    gen(){
+      let r = null;
+      for(let i=0;i<1000 && !r;i++){ try{ r = tryCInt(); }catch(e){ r = null; } }
+      const code = `int main(void) {\n    int32_t ${r.vs.join(', ')};\n` + r.lines.map(l=>'    '+l).join('\n') + '\n    return 0;\n}';
+      return {
+        stmt:'Determina el valor final de cada variable. Recuerda que los negativos van en complemento a 2.',
+        code,
+        fields: r.vs.map(v=>({label:v, kind:'dec', ans:String(r.val[v])})),
+        sol: `<div class="codebox">${r.tr.join('\n').replace(/</g,'&lt;')}</div>`
+      };
+    }
+  });
+
+  // ================= LEER CÓDIGO: C CON PUNTEROS (cuestiones U2 15-16, problema 2.2) =================
+  addGenCard('cptr', {
+    container:'leer-gen', eyebrow:'Cuestiones U2 · 15 y 16 · Problema 2.2',
+    title:'C con punteros: ¿qué variables cambian de verdad?',
+    intro:'Un parámetro por valor es una copia: cambiarlo dentro de la función no afecta al main. Con <code>*p</code> se modifica la variable original. Ojo también con el puntero que se declara en el main.',
+    gen(){
+      const S = pick([{m:['x','y','z'],f:'rutina',p:['a1','a2','a3']},{m:['i','j','k'],f:'ajustar',p:['x1','x2','x3']},{m:['u','v','w'],f:'cambia',p:['r1','r2','r3']}]);
+      const M = {};
+      S.m.forEach(n=>{ M[n] = (Math.random()<0.25 ? -1 : 1)*(2+rnd(40)); });
+      const M0 = Object.assign({}, M);
+      const kinds = pick([['val','ptr','ptr'],['ptr','ptr','val'],['ptr','val','ptr']]);
+      const loc = {}, tgt = {};
+      kinds.forEach((k,i)=>{ if(k==='val') loc[S.p[i]] = M[S.m[i]]; else tgt[S.p[i]] = S.m[i]; });
+      const vp = S.p[kinds.indexOf('val')];
+      const pp = S.p.filter((_,i)=>kinds[i]==='ptr');
+      const tr = [`Llamada: ${vp} recibe una copia de ${S.m[kinds.indexOf('val')]} (${loc[vp]}); ${pp.map(p=>`${p} apunta a ${tgt[p]}`).join(', ')}.`];
+      const body = [];
+      const stmtVal = ()=>{ const k = 2+rnd(4); if(Math.random()<0.5){ loc[vp] *= k; body.push(`${vp} *= ${k};`); } else { loc[vp] += k; body.push(`${vp} += ${k};`); } tr.push(`${body[body.length-1]} → copia local ${vp} = ${loc[vp]} (el main no se entera)`); };
+      const stmtPtr = (p, q)=>{
+        const t = tgt[p];
+        const kind = pick(['addv','mulk','copy','subv']);
+        if(kind==='addv'){ M[t] += loc[vp]; body.push(`*${p} += ${vp};`); }
+        if(kind==='subv'){ M[t] -= loc[vp]; body.push(`*${p} -= ${vp};`); }
+        if(kind==='mulk'){ const k = 2+rnd(3); M[t] *= k; body.push(`*${p} *= ${k};`); }
+        if(kind==='copy'){ M[t] = M[tgt[q]] + loc[vp]; body.push(`*${p} = *${q} + ${vp};`); }
+        tr.push(`${body[body.length-1]} → ${t} = ${M[t]}`);
+      };
+      const order = shuffle(['v','p0','p1']);
+      order.forEach(o=>{ if(o==='v') stmtVal(); else if(o==='p0') stmtPtr(pp[0], pp[1]); else stmtPtr(pp[1], pp[0]); });
+      const pn = pick(['ptr','pp']);
+      const pt = pick(S.m);
+      const [xa, xb] = shuffle(S.m.slice()).slice(0,2);
+      const post = [];
+      const K = 10*(1+rnd(9));
+      if(Math.random()<0.5){ M[pt] = K + M[xa]; post.push(`*${pn} = ${K} + ${xa};`); }
+      else { M[pt] -= M[xa]; post.push(`*${pn} -= ${xa};`); }
+      tr.push(`${post[0]} → ${pn} apunta a ${pt}, así que ${pt} = ${M[pt]}`);
+      const k2 = 2+rnd(6);
+      if(Math.random()<0.5){ M[xb] = k2*M[xb] - M[xa]; post.push(`${xb} = ${k2} * ${xb} - ${xa};`); }
+      else { M[xb] += M[xa]; post.push(`${xb} += ${xa};`); }
+      tr.push(`${post[1]} → ${xb} = ${M[xb]}`);
+      const decl = S.p.map((p,i)=>kinds[i]==='val' ? `int32_t ${p}` : `int32_t *${p}`).join(', ');
+      const args = S.m.map((m,i)=>kinds[i]==='val' ? m : '&'+m).join(', ');
+      const code =
+`void ${S.f}(${decl});
+int main(void) {
+${S.m.map(m=>`    int32_t ${m} = ${M0[m]};`).join('\n')}
+    int32_t *${pn} = &${pt};
+    ${S.f}(${args});
+${post.map(l=>'    '+l).join('\n')}
+    return 0;
+}
+
+void ${S.f}(${decl}) {
+${body.map(l=>'    '+l).join('\n')}
+}`;
+      return {
+        stmt:'Determina el valor final de cada variable del main.',
+        code,
+        fields: S.m.map(m=>({label:m, kind:'dec', ans:String(M[m])})),
+        sol: liList(tr)
+      };
+    }
+  });
+
+  // ================= LEER CÓDIGO: LÍNEAS DEL BUS DE DATOS (cuestiones U3 1-4) =================
+  addGenCard('bus', {
+    container:'leer-gen', eyebrow:'Cuestiones U3 · 1 a 4',
+    title:'¿Por qué líneas del bus de datos circula el dato?',
+    intro:'Un puerto de 8 bits va conectado a <strong>D31-D24</strong>; uno de 16 bits a <strong>D31-D16</strong>. En un puerto de 32 bits, el byte de la dirección terminada en 0, 1, 2, 3 (módulo 4) va por D31-D24, D23-D16, D15-D8, D7-D0. El bit b del dato sale por la línea (primera línea del puerto) + b.',
+    gen(){
+      const busTxt = pick(['32 bits (líneas 0 a 31)','16 bits (líneas 16 a 31)']);
+      const kind = pick(['led','shift','btst','lanes']);
+      if(kind==='led'){
+        const W = pick([8,16]), b = rnd(W), line = 32-W+b;
+        const s = W===8 ? 'B' : 'W';
+        return {
+          stmt:`Un dispositivo de E/S tiene un puerto de <strong>${W} bits</strong> (variable <code>FILA</code>) y el bus de datos está configurado a ${busTxt}. Determina el valor decimal <code>XX</code> para que solo se encienda el LED conectado a la línea <strong>D${line}</strong>.`,
+          code:`MOVE.${s}  #XX,D1\nMOVE.${s}  D1,FILA`,
+          fields:[{label:'XX (decimal)', kind:'dec', ans:String(Math.pow(2,b)), w:130}],
+          sol: liList([`El puerto de ${W} bits usa las líneas D${32-W}-D31, así que el bit 0 del dato sale por D${32-W}.`, `D${line} es el bit ${line} − ${32-W} = ${b} del dato.`, `XX = 2^${b} = <strong>${Math.pow(2,b)}</strong>.`])
+        };
+      }
+      if(kind==='shift'){
+        const b = rnd(8), up = b>0 && Math.random()<0.5;
+        const nn = 1+rnd(up ? b : 4);
+        const start = up ? Math.pow(2, b-nn) : Math.pow(2, b+nn);
+        const op = up ? 'LSL' : 'LSR';
+        const line = 24+b;
+        return {
+          stmt:`Un relé forma parte de un dispositivo de E/S con puerto de <strong>8 bits</strong> (variable <code>CIERRE</code>); el bus está configurado a ${busTxt}. ¿A qué línea del bus está conectado el relé si se activa al ejecutar este código?`,
+          code:`MOVE.L  #${start},D3\n${op}     #${nn},D3\nMOVE.B  D3,CIERRE`,
+          fields:[{label:'Línea (p. ej. D30)', kind:'lines', ans:String(line), w:150}],
+          sol: liList([`D3 = ${start} ${up?'·':'÷'} 2^${nn} = ${Math.pow(2,b)} → solo está a 1 el bit ${b}.`, `Puerto de 8 bits → D24-D31; el bit ${b} va por D${24}+${b} = <strong>D${line}</strong>.`])
+        };
+      }
+      if(kind==='btst'){
+        const b = rnd(8), n = 1+rnd(4), start = b*Math.pow(2,n);
+        return {
+          stmt:`Un interruptor forma parte de un dispositivo de E/S con puerto de <strong>8 bits</strong> (variable <code>MARCHA</code>); el bus está configurado a ${busTxt}. ¿A qué línea está conectado si su estado se lee así?`,
+          code:`MOVE.L  #$${start.toString(16).toUpperCase()},D3\nMOVE.L  #${n},D5\nLSR     D5,D3\nBTST.B  D3,MARCHA`,
+          fields:[{label:'Línea (p. ej. D28)', kind:'lines', ans:String(24+b), w:150}],
+          sol: liList([`D3 = $${start.toString(16).toUpperCase()} >> ${n} = ${b}.`, `<code>BTST</code> usa D3 como <strong>número de bit</strong> (no como máscara) → comprueba el bit ${b}.`, `Puerto de 8 bits → D24-D31 → <strong>D${24+b}</strong>.`])
+        };
+      }
+      const size = pick(['B','W']);
+      let a = (rnd(0xFFFFF)) >>> 0;
+      if(size==='W') a &= ~1;
+      const lane = a % 4;
+      let lo, hi;
+      if(size==='B'){ hi = 31-8*lane; lo = hi-7; }
+      else { hi = lane===0 ? 31 : 15; lo = hi-15; }
+      return {
+        stmt:`El bus de datos está configurado a 32 bits (líneas 0 a 31) y la dirección <code>$${a.toString(16).toUpperCase()}</code> está asignada a un dispositivo con puerto de <strong>32 bits</strong>. ¿Por qué líneas circula el dato?`,
+        code:`MOVE.${size}  D1,$${a.toString(16).toUpperCase()}`,
+        fields:[{label:'Líneas (p. ej. D16-D23)', kind:'lines', ans:`${lo}-${hi}`, w:170}],
+        sol: liList([`Dirección módulo 4 = ${lane}.`, size==='B' ? `Un byte en posición ${lane} dentro del long va por D${hi}-D${lo}.` : `Una palabra en posición ${lane} dentro del long va por D${hi}-D${lo}.`, `Respuesta: <strong>D${lo}-D${hi}</strong>.`])
+      };
+    }
+  });
+
   // ================= QUIZ =================
   const bank = [
     {q:'¿Qué significa ENABLE=1 en un registro CSBRn?', a:['Se habilita el uso de la salida CSn#.','Se activa el modo supervisor.','Se selecciona la RAM interna.','Se fuerza un reset del módulo SIM.'], c:0, e:'ENABLE habilita o inhabilita el uso de esa salida de selección de chip; no tiene relación con el modo de acceso ni con la RAM interna.'},
@@ -1281,6 +2059,19 @@ funcionA(varA, &varB);`;
     {q:'MOVEM.L D2/D0/A3,(A7) guarda los registros en la pila en qué orden real…', a:['El orden escrito: D2, D0, A3.', 'Siempre D0...D7, A0...A7, sin importar el orden escrito.', 'Orden alfabético.', 'El orden inverso al escrito.'], c:1, e:'MOVEM siempre procesa los registros en el orden fijo D0→D7, A0→A7, independientemente de cómo los liste la instrucción.'},
     {q:'Justo antes de un RTS, ¿qué debe hacer una subrutina que reservó espacio local con ADDA.L #-12,A7 al entrar?', a:['Nada, RTS limpia la pila automáticamente.', 'Ejecutar ADDA.L #12,A7 (u operación equivalente) para liberar esos 12 bytes.', 'Ejecutar otro ADDA.L #-12,A7.', 'Hacer MOVEM.L (A7)+,D0-D7/A0-A7.'], c:1, e:'Hay que devolver A7 a su valor anterior al reservar el espacio local, o RTS leerá como "dirección de retorno" un byte que no lo es.'},
     {q:'DIVU.W D1,D0 (división de palabra) deja el resultado en D0 como…', a:['Cociente en los 32 bits de D0.', 'Cociente en los 16 bits bajos, resto en los 16 bits altos.', 'Resto en los 16 bits bajos, cociente en los 16 bits altos.', 'Cociente y resto en registros separados automáticamente.'], c:1, e:'En la división de palabra (.W), D0 queda partido en dos mitades de 16 bits: la baja con el cociente y la alta con el resto.'},
+    {q:'Problema 2.1 (MAXIMO): la tabla tiene palabras CON signo y el código hace CMP D2,D1 / BCC Sigue. ¿Qué falla?', a:['BCC compara sin signo; para números con signo hay que usar BGE (o BGT).', 'CMP no se puede usar con registros de datos.', 'BCC solo salta si el resultado es cero.', 'Nada: BCC y BGE son equivalentes.'], c:0, e:'CC/CS/HI/LS son condiciones sin signo (miran C). Con números con signo un negativo parecería enorme. El otro error del enunciado: el máximo empieza en 0 con CLR.L D1, así que si todos los números son negativos el resultado sale mal.'},
+    {q:'Problema 2.1: ¿para qué sirve EXT.L D2 después de MOVE.W (A6)+,D2?', a:['Extiende el signo de la palabra a 32 bits para poder comparar y copiar el registro entero como .L.', 'Pone a cero los 16 bits altos.', 'Multiplica D2 por 2.', 'Convierte D2 a ASCII.'], c:0, e:'MOVE.W solo escribe los 16 bits bajos. EXT.L copia el bit 15 en los bits 16-31, así un −5 de 16 bits sigue valiendo −5 en 32 bits. Por eso luego se puede usar CMP y MOVE.L con el registro completo.'},
+    {q:'Problema 2.1: el principal hace PEA Tabla / MOVE.W #Elementos,-(A7) / PEA Resultado / BSR Maximo. ¿Por qué hace ADDA.L #10,A7 al volver?', a:['Para liberar los 10 bytes de parámetros (4 + 2 + 4) que apiló antes del BSR.', 'Para saltar las 10 primeras palabras de la tabla.', 'Porque RTS deja A7 desplazado 10 bytes.', 'Para reservar espacio para el resultado.'], c:0, e:'RTS solo desapila el PC de retorno. Los parámetros los apiló quien llama, así que quien llama debe quitarlos: 4 (PEA) + 2 (MOVE.W) + 4 (PEA) = 10 bytes.'},
+    {q:'En Maximo (problema 2.1), recién entrado tras el BSR y sin haber apilado nada más, ¿qué hay en 4(A7)?', a:['El último parámetro apilado: la dirección de Resultado.', 'La dirección de Tabla.', 'El PC de retorno.', 'El número de elementos.'], c:0, e:'0(A7) es el PC de retorno (4 bytes). Justo encima, en 4(A7), está lo último que se apiló antes del BSR: PEA Resultado. Luego 8(A7) = Elementos (word) y 10(A7) = Tabla.'},
+    {q:'Rutina CM (problema 2.1): suma 256 palabras con signo de una tabla y al final hace ASR #8,D0. ¿Qué calcula?', a:['La media de las 256 palabras (suma ÷ 256).', 'El máximo de la tabla.', 'La suma de la tabla multiplicada por 8.', 'El número de elementos negativos.'], c:0, e:'ASR #8 es una división entre 2^8 = 256 que conserva el signo, así que es la media. El resultado se guarda en la dirección que se pasó como parámetro, en 20(A7).'},
+    {q:'¿Diferencia entre BSR y JSR?', a:['BSR salta con un desplazamiento relativo al PC; JSR admite cualquier modo, como una dirección absoluta (útil para una rutina EXTERNAL que resuelve el enlazador).', 'BSR no apila la dirección de retorno.', 'JSR solo se puede usar dentro de interrupciones.', 'Ninguna, son sinónimos exactos.'], c:0, e:'Las dos apilan el PC de retorno. BSR codifica un desplazamiento respecto al PC; JSR lleva la dirección destino con cualquier modo de direccionamiento. Por eso una subrutina externa (EXTERNAL Aviso) se llama con JSR y su dirección la pone el enlazador.'},
+    {q:'¿Qué hace la directiva EQU?', a:['Da un valor a un símbolo; no reserva memoria.', 'Reserva un long en memoria.', 'Compara dos registros.', 'Inicializa una posición de memoria a un valor.'], c:0, e:'EQU solo define una constante para el ensamblador. Por eso en las cuestiones de directivas no ocupa bytes: la etiqueta siguiente empieza en la misma dirección.'},
+    {q:'D5 = $000C6FA5. Tras MOVE.W (A3),D5, con (A3) apuntando a un long $00408F7A, D5 vale…', a:['$000C0040', '$00000040', '$00408F7A', '$000C8F7A'], c:0, e:'MOVE.W lee 2 bytes de la dirección de A3; en big-endian son los 2 más significativos ($0040). Y como es .W, solo cambia la palabra baja de D5. (Es la cuestión 3 de la U2.)'},
+    {q:'BTST.B D3,MARCHA con D3 = 4: ¿qué se comprueba?', a:['El bit 4 de MARCHA.', 'Si MARCHA vale 4.', 'Los 4 bits bajos de MARCHA.', 'El bit 2 de MARCHA (porque 4 = %100).'], c:0, e:'BTST usa el registro como número de bit (módulo 8 en memoria), no como máscara. Con un puerto de 8 bits ese bit 4 llega por la línea D28.'},
+    {q:'Una interrupción llega en medio de una subrutina. ¿Cuántos bytes apila el procesador automáticamente?', a:['8: PC (4) + SR (2) + formato/vector (2).', '4: solo el PC.', '6: PC + SR.', 'Ninguno; lo hace la rutina de atención.'], c:0, e:'La trama de excepción del ColdFire ocupa 8 bytes. Después la rutina de atención apila lo que guarde ella (MOVE.L, MOVEM, BSR…), todo encima.'},
+    {q:'¿Qué hace esta función en C?  uint32_t FC(uint32_t n){ if(n<1) return 1; else return n*FC(n-1); }', a:['Calcula el factorial de n de forma recursiva.', 'Calcula 2^n.', 'Suma los números de 1 a n.', 'Devuelve siempre 1.'], c:0, e:'FC(n) = n · FC(n−1) y FC(0) = 1, así que FC(n) = n!. (Problema 2.2.)'},
+    {q:'¿Qué hace RP?  for(p=&array[0]; p<&array[n]; p+=1) *p = *(p+n);', a:['Copia los elementos array[n]…array[2n−1] sobre array[0]…array[n−1].', 'Pone a cero los n primeros elementos.', 'Invierte el array.', 'Suma n a cada elemento.'], c:0, e:'p recorre las n primeras posiciones y en cada una escribe el valor que está n posiciones más adelante. Recuerda que p+n en punteros avanza n elementos, no n bytes. (Problema 2.2.)'},
+    {q:'MOVEM.L (A7),D0-D2/A0 al final de una subrutina, ¿modifica A7?', a:['No; por eso después hace falta ADDA.L #16,A7.', 'Sí, suma 16 a A7 automáticamente.', 'Sí, resta 16 a A7.', 'Solo si hay una interrupción pendiente.'], c:0, e:'Con (A7), sin postincremento, MOVEM lee los registros pero deja A7 como estaba. El ADDA.L #16,A7 libera el hueco que reservó el ADDA.L #-16,A7 de la entrada.'},
   ];
   let order=[], qi=0, score=0;
   function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
