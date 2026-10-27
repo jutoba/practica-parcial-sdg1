@@ -1,0 +1,7 @@
+# Solo se publica la app; el material de la asignatura se queda en local
+*
+!.gitignore
+!README.md
+!index.html
+!practica_parcial.html
+!generador_ejercicios_parcial1_SDG1.md

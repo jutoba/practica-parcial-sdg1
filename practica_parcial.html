@@ -1,0 +1,1326 @@
+<title>Repaso parcial · Mapa de memoria MCF5272</title>
+<style>
+  @media (prefers-color-scheme: dark) {
+    :root{
+      --bg:#11161c; --surface:#1a2129; --surface-2:#212a33; --line:#2d3844;
+      --text:#e7edf0; --text-muted:#93a1ab;
+      --accent:#e08f3c; --accent-soft:#3a2c1a; --accent-ink:#1a1206;
+      --accent2:#52b7ab; --accent2-soft:#17302d;
+      --good:#4ecb86; --good-soft:#123323; --bad:#ec6a63; --bad-soft:#2e1a19;
+      --mono-bg:#0c1014; --mono-text:#cfe8df; --mono-line:#223029;
+      --shadow: 0 10px 30px -12px rgba(0,0,0,.55);
+    }
+  }
+  :root{
+    --bg:#eef1ef; --surface:#ffffff; --surface-2:#f3f5f3; --line:#ccd4d1;
+    --text:#16211f; --text-muted:#51615d;
+    --accent:#b96a1f; --accent-soft:#f0ddc4; --accent-ink:#2a1700;
+    --accent2:#1f8a7f; --accent2-soft:#dbeeeb;
+    --good:#2f9d5e; --good-soft:#dff3e7; --bad:#d1453f; --bad-soft:#fbe4e2;
+    --mono-bg:#101715; --mono-text:#d8e4e0; --mono-line:#223029;
+    --shadow: 0 10px 30px -14px rgba(20,30,28,.25);
+    --f-display:"Bahnschrift SemiBold","Bahnschrift","Segoe UI Semibold","Arial Narrow",sans-serif;
+    --f-body:"Segoe UI",ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --f-mono:"Cascadia Code",ui-monospace,"SF Mono",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  :root[data-theme="dark"]{
+    --bg:#11161c; --surface:#1a2129; --surface-2:#212a33; --line:#2d3844;
+    --text:#e7edf0; --text-muted:#93a1ab;
+    --accent:#e08f3c; --accent-soft:#3a2c1a; --accent-ink:#1a1206;
+    --accent2:#52b7ab; --accent2-soft:#17302d;
+    --good:#4ecb86; --good-soft:#123323; --bad:#ec6a63; --bad-soft:#2e1a19;
+    --mono-bg:#0c1014; --mono-text:#cfe8df; --mono-line:#223029;
+    --shadow: 0 10px 30px -12px rgba(0,0,0,.55);
+  }
+  :root[data-theme="light"]{
+    --bg:#eef1ef; --surface:#ffffff; --surface-2:#f3f5f3; --line:#ccd4d1;
+    --text:#16211f; --text-muted:#51615d;
+    --accent:#b96a1f; --accent-soft:#f0ddc4; --accent-ink:#2a1700;
+    --accent2:#1f8a7f; --accent2-soft:#dbeeeb;
+    --good:#2f9d5e; --good-soft:#dff3e7; --bad:#d1453f; --bad-soft:#fbe4e2;
+    --mono-bg:#101715; --mono-text:#d8e4e0; --mono-line:#223029;
+    --shadow: 0 10px 30px -14px rgba(20,30,28,.25);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--f-body);
+    line-height:1.55; font-size:16px;
+  }
+  h1,h2,h3,h4{
+    font-family:var(--f-display); font-weight:700; text-wrap:balance; margin:0;
+    letter-spacing:.01em;
+  }
+  code, .mono, input.mono, .hex{ font-family:var(--f-mono); font-variant-numeric:tabular-nums; }
+  a{ color:var(--accent2); }
+  button{ font-family:var(--f-body); cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--accent2); outline-offset:2px; }
+
+  .app{ max-width:1180px; margin:0 auto; padding:0 20px 80px; }
+
+  .topbar{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+    padding:28px 0 18px; border-bottom:1px solid var(--line); flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    font-family:var(--f-display); font-weight:700; font-size:13px; letter-spacing:.14em;
+    background:var(--text); color:var(--bg);
+    padding:6px 9px; border-radius:3px; line-height:1;
+  }
+  .brand h1{ font-size:26px; }
+  .brand p{ margin:2px 0 0; color:var(--text-muted); font-size:14px; }
+  .countdown{
+    display:flex; align-items:center; gap:10px; background:var(--surface-2);
+    border:1px solid var(--line); border-radius:999px; padding:8px 16px;
+    font-size:13px; color:var(--text-muted);
+  }
+  .countdown strong{ color:var(--accent); font-family:var(--f-display); font-size:15px; }
+
+  .layout{ display:grid; grid-template-columns:200px 1fr; gap:28px; margin-top:24px; align-items:start; }
+  @media (max-width:760px){ .layout{ grid-template-columns:1fr; } }
+
+  .rail{
+    position:sticky; top:20px; display:flex; flex-direction:column; gap:6px;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px;
+  }
+  @media (max-width:760px){
+    .rail{ position:static; flex-direction:row; overflow-x:auto; gap:8px; }
+  }
+  .rail-btn{
+    display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+    border:1px solid transparent; background:transparent; color:var(--text-muted);
+    padding:10px 12px; border-radius:7px; text-align:left; font-size:13.5px; white-space:nowrap;
+  }
+  .rail-btn .t{ font-family:var(--f-display); font-size:14px; color:var(--text); }
+  .rail-btn .s{ font-size:11.5px; color:var(--text-muted); }
+  .rail-btn:hover{ background:var(--surface-2); }
+  .rail-btn.active{ background:var(--accent-soft); border-color:var(--accent); }
+  .rail-btn.active .t{ color:var(--accent-ink); }
+  .rail-btn.active .s{ color:var(--accent-ink); opacity:.75; }
+  :root[data-theme="dark"] .rail-btn.active .t, :root[data-theme="dark"] .rail-btn.active .s{ color:#fde8cf; }
+  @media (prefers-color-scheme: dark){ .rail-btn.active .t, .rail-btn.active .s{ color:#fde8cf; } }
+
+  .panel{ display:none; flex-direction:column; gap:18px; }
+  .panel.active{ display:flex; }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:20px 22px; box-shadow:var(--shadow);
+  }
+  .card h2{ font-size:20px; margin-bottom:4px; }
+  .card h3{ font-size:15.5px; margin:0 0 8px; color:var(--text); }
+  .card .eyebrow{
+    font-family:var(--f-display); font-size:11.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:6px; display:block;
+  }
+  .card p{ margin:0 0 10px; max-width:66ch; color:var(--text); }
+  .card p.muted, .muted{ color:var(--text-muted); }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:640px){ .grid2{ grid-template-columns:1fr; } }
+
+  table{ border-collapse:collapse; width:100%; font-size:14px; }
+  .tablewrap{ overflow-x:auto; border:1px solid var(--line); border-radius:8px; }
+  th,td{ padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th{ background:var(--surface-2); font-family:var(--f-display); font-size:12.5px; letter-spacing:.03em; color:var(--text-muted); }
+  tr:last-child td{ border-bottom:none; }
+
+  .codebox{
+    background:var(--mono-bg); color:var(--mono-text); border:1px solid var(--mono-line);
+    border-radius:8px; padding:14px 16px; font-family:var(--f-mono); font-size:13px;
+    overflow-x:auto; line-height:1.6; white-space:pre;
+  }
+  .codebox .dim{ opacity:.55; }
+  .codebox .hl{ color:var(--accent); font-weight:600; }
+
+  .bitfield{ display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; font-family:var(--f-mono); font-size:12px; margin:10px 0; }
+  .bitfield > div{ padding:8px 6px; text-align:center; border-right:1px solid var(--line); background:var(--surface-2); }
+  .bitfield > div:last-child{ border-right:none; }
+  .bitfield .b-base{ background:var(--accent-soft); font-weight:700; }
+  .bitfield small{ display:block; color:var(--text-muted); font-weight:400; margin-top:2px; }
+
+  .field-row{ display:flex; flex-wrap:wrap; gap:10px; margin:10px 0; }
+  .field{ display:flex; flex-direction:column; gap:4px; min-width:92px; }
+  .field label{ font-size:11.5px; color:var(--text-muted); font-family:var(--f-display); letter-spacing:.03em; }
+  .field input{
+    font-family:var(--f-mono); font-size:14px; padding:7px 9px; border:1px solid var(--line);
+    border-radius:6px; background:var(--surface); color:var(--text); width:100%;
+  }
+  .field input.ok{ border-color:var(--good); background:var(--good-soft); }
+  .field input.bad{ border-color:var(--bad); background:var(--bad-soft); }
+
+  .rangepair{ display:flex; align-items:center; gap:8px; }
+  .rangepair span{ color:var(--text-muted); }
+
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .btn{
+    font-family:var(--f-display); font-size:13px; letter-spacing:.02em; border-radius:7px;
+    padding:9px 16px; border:1px solid var(--line); background:var(--surface-2); color:var(--text);
+  }
+  .btn:hover{ background:var(--line); }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .btn.ghost{ background:transparent; }
+
+  .result-chip{ font-size:13px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:var(--text-muted); }
+  .result-chip.ok{ background:var(--good-soft); border-color:var(--good); color:var(--good); }
+  .result-chip.bad{ background:var(--bad-soft); border-color:var(--bad); color:var(--bad); }
+
+  details.solution{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
+  details.solution summary{ cursor:pointer; font-family:var(--f-display); font-size:13px; color:var(--accent2); }
+  details.solution ul{ margin:10px 0 0; padding-left:18px; }
+  details.solution li{ margin-bottom:5px; font-size:14px; }
+
+  .scorepill{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--f-display); font-size:12.5px;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:5px 12px; color:var(--text-muted);
+  }
+  .scorepill strong{ color:var(--accent); }
+
+  .quiz-q{ font-size:16px; margin-bottom:12px; }
+  .quiz-opts{ display:flex; flex-direction:column; gap:8px; }
+  .quiz-opt{
+    text-align:left; border:1px solid var(--line); background:var(--surface-2); border-radius:8px;
+    padding:10px 14px; font-size:14.5px; color:var(--text);
+  }
+  .quiz-opt:hover{ background:var(--line); }
+  .quiz-opt.correct{ background:var(--good-soft); border-color:var(--good); }
+  .quiz-opt.incorrect{ background:var(--bad-soft); border-color:var(--bad); }
+  .quiz-explain{ margin-top:12px; font-size:14px; color:var(--text-muted); border-top:1px dashed var(--line); padding-top:10px; display:none; }
+
+  .taglist{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+  .tag{ font-size:11.5px; font-family:var(--f-display); letter-spacing:.03em; padding:3px 9px; border-radius:999px; background:var(--accent2-soft); color:var(--accent2); border:1px solid var(--accent2); }
+
+  footer.note{ color:var(--text-muted); font-size:12.5px; margin-top:6px; text-align:center; }
+</style>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-mark">SDGI</span>
+      <div class="brand-text">
+        <h1>Repaso para el parcial</h1>
+        <p>Mapa de memoria y selección de chip (CSBR/CSOR) en el MCF5272</p>
+      </div>
+    </div>
+    <div class="countdown" id="countdown">calculando…</div>
+  </div>
+
+  <div class="layout">
+    <nav class="rail" id="rail">
+      <button class="rail-btn active" data-tab="resumen">
+        <span class="t">Resumen</span><span class="s">Chuleta de registros</span>
+      </button>
+      <button class="rail-btn" data-tab="mapa">
+        <span class="t">Mapa de memoria</span><span class="s">3 casos resueltos</span>
+      </button>
+      <button class="rail-btn" data-tab="registros">
+        <span class="t">CSBR / CSOR</span><span class="s">Calculadora aleatoria</span>
+      </button>
+      <button class="rail-btn" data-tab="asm">
+        <span class="t">Ensamblador</span><span class="s">EA, pila, bucles y C</span>
+      </button>
+      <button class="rail-btn" data-tab="test">
+        <span class="t">Test rápido</span><span class="s">15 preguntas</span>
+      </button>
+    </nav>
+
+    <main class="content">
+
+      <!-- ===================== RESUMEN ===================== -->
+      <section class="panel active" id="tab-resumen">
+        <div class="card">
+          <span class="eyebrow">Por qué este tema</span>
+          <h2>El mapa de memoria aparece en todos los parciales</h2>
+          <p>En Nov-2015, Ene-2016, Nov-2017 y el parcial de SDG1 2017-18, la primera pregunta es siempre la misma: a partir de un listado en ensamblador y un enunciado, reconstruir el mapa de direcciones y configurar los registros <code>CSBRn</code> / <code>CSORn</code>. Esta página practica justo eso.</p>
+        </div>
+
+        <div class="card">
+          <h3>Comprobación rápida de una BAM</h3>
+          <p>Como tienes calculadora de bases, no necesitas hacer las conversiones a mano — pero sí conviene saber reconocer un error. Una BAM siempre es "N unos seguidos de ceros", así que <strong>cada cifra hexadecimal solo puede ser 0, 8, C, E o F</strong>. Si te sale cualquier otra cifra (1,2,3,4,5,6,7,9,A,B,D), te has equivocado en algún paso.</p>
+          <div class="codebox">válidas:    $FFFFC   $FFFC0   $FFFE0   $FFFFF   $FF800
+inválida:   $FFFFD   ← la D es imposible en una BAM</div>
+        </div>
+
+        <div class="card">
+          <h3>Registro base de selección de chip — <span class="hex">CSBR0–CSBR7</span></h3>
+          <div class="bitfield">
+            <div style="flex:5" class="b-base">BA<small>bits 31-12 · dirección base ÷ $1000</small></div>
+            <div style="flex:1">EBI<small>11-10</small></div>
+            <div style="flex:1">BW<small>9-8</small></div>
+            <div style="flex:1">SUPER<small>7</small></div>
+            <div style="flex:2">—<small>6-1</small></div>
+            <div style="flex:1">EN<small>0</small></div>
+          </div>
+          <table>
+            <tr><th>EBI</th><td>00 SRAM/ROM 16-32 bits con byte-enable</td><td>01 SDRAM (solo CS7)</td><td>10 reservado</td><td>11 SRAM/ROM 8 bits sin byte-enable</td></tr>
+            <tr><th>BW</th><td>00 long (32b)</td><td>01 byte (8b)</td><td>10 word (16b)</td><td>11 línea de caché (32b)</td></tr>
+          </table>
+          <p class="muted" style="margin-top:8px;"><strong>SUPER</strong>=1 → CSn# solo se activa en modo supervisor · <strong>ENABLE</strong>=1 → se habilita la salida CSn#.</p>
+          <div class="codebox">CSBRn = (BA &lt;&lt; 12) | (EBI &lt;&lt; 10) | (BW &lt;&lt; 8) | (SUPER &lt;&lt; 7) | ENABLE</div>
+        </div>
+
+        <div class="card">
+          <h3>Registro de opciones — <span class="hex">CSOR0–CSOR7</span></h3>
+          <div class="bitfield">
+            <div style="flex:5" class="b-base">BAM<small>bits 31-12 · máscara de comparación</small></div>
+            <div style="flex:2">—<small>11-6</small></div>
+            <div style="flex:2">WS<small>6-2 · estados de espera</small></div>
+            <div style="flex:1">RW<small>1</small></div>
+            <div style="flex:1">MRW<small>0</small></div>
+          </div>
+          <p>La <strong>BAM</strong> marca con 1 los bits que SÍ se comparan. El decodificador solo exige que coincidan con BA los bits donde BAM=1; donde BAM=0 el bit de la dirección puede ser cualquier cosa — ahí es donde "crece" el rango. Como BA/BAM solo cubren A31-A12, el bloque mínimo posible ya es de 4 KB (2¹²).</p>
+          <p><strong>Receta:</strong> tamaño = 2ⁿ → <code>k = n-12</code> bits a 0 (los menos significativos de los 20) → escribe (20-k) unos seguidos de k ceros → agrupa en 5 nibbles de 4 bits → pasa a hex.</p>
+          <div class="codebox">16 KB = 2^14 → k=2 → 18 unos + 2 ceros
+  1111 1111 1111 1111 1100
+   F    F    F    F    C      → BAM = $FFFFC
+
+256 KB = 2^18 → k=6 → 14 unos + 6 ceros
+  1111 1111 1111 1100 0000
+   F    F    F    C    0      → BAM = $FFFC0
+
+4 KB  = 2^12 → k=0 → 20 unos  → BAM = $FFFFF  (bloque mínimo)
+
+CSORn = (BAM &lt;&lt; 12) | (WS &lt;&lt; 2) | (RW &lt;&lt; 1) | MRW</div>
+          <p class="muted" style="margin-top:8px;"><strong>MRW</strong>=0 → lectura/escritura (RW no importa) · <strong>MRW</strong>=1 → solo lectura (RW=0) o solo escritura (RW=1).</p>
+        </div>
+
+        <div class="card">
+          <h3>Memoria interna y SIM — <span class="hex">MBAR / RAMBAR</span></h3>
+          <div class="grid2">
+            <div>
+              <p><strong>MBAR</strong> — mapea el módulo SIM (registros internos) en una ventana fija de <strong>64 KB</strong>.</p>
+              <div class="codebox">MBAR = (BA16 &lt;&lt; 16) | SC&lt;&lt;4 | SD&lt;&lt;3 | UC&lt;&lt;2 | UD&lt;&lt;1 | V
+ej: MBAR=$00010001 → SIM en $00010000-$0001FFFF, V=1</div>
+            </div>
+            <div>
+              <p><strong>RAMBAR</strong> — habilita la RAM interna, de tamaño fijo <strong>4 KB</strong>.</p>
+              <div class="codebox">RAMBAR = (BA20 &lt;&lt; 12) | WP&lt;&lt;8 | CI&lt;&lt;5 | SC&lt;&lt;4 | SD&lt;&lt;3 | UC&lt;&lt;2 | UD&lt;&lt;1 | V
+ej: RAMBAR=$00004035 → RAM en $00004000-$00004FFF (WP=0, así que no afecta a este valor)
+Ojo: en las máscaras SC/SD/UC/UD el 1 PROHÍBE el acceso, el 0 lo PERMITE.</div>
+            </div>
+          </div>
+          <p class="muted">Dato que cae mucho en el test: hay 8 salidas CS0#-CS7#; CS0# es la única habilitada tras el reset y da acceso a la ROM de arranque.</p>
+        </div>
+      </section>
+
+      <!-- ===================== MAPA DE MEMORIA ===================== -->
+      <section class="panel" id="tab-mapa">
+
+        <div class="card">
+          <span class="eyebrow">Caso 1 · guiado</span>
+          <h2>Construir un mapa de memoria desde cero (apuntes U3)</h2>
+          <p>El sistema tiene: ROM externa con el programa (16 KB, CS0#), RAM interna para variables y pila (4 KB, vía RAMBAR), el módulo SIM (64 KB, vía MBAR), otros dispositivos de E/S externos (64 KB, CS2#) y RAM externa de datos (256 KB, CS1#). El bus de datos es de 32 bits en todos los casos; la RAM externa necesita 1 estado de espera; se inhabilita el acceso a la RAM interna para accesos de código.</p>
+          <div class="tablewrap">
+            <table>
+              <tr><th>Rango (hex)</th><th>Dispositivo</th><th>Vía</th></tr>
+              <tr><td class="hex">$00000000 – $00003FFF</td><td>ROM externa (programa) · 16 KB</td><td>CS0#</td></tr>
+              <tr><td class="hex">$00004000 – $00004FFF</td><td>RAM interna (variables y pila) · 4 KB</td><td>RAMBAR</td></tr>
+              <tr><td class="hex">$00010000 – $0001FFFF</td><td>Módulo SIM (registros internos) · 64 KB</td><td>MBAR</td></tr>
+              <tr><td class="hex">$00020000 – $0002FFFF</td><td>Otros dispositivos de E/S externos · 64 KB</td><td>CS2#</td></tr>
+              <tr><td class="hex">$00040000 – $0007FFFF</td><td>RAM externa (datos) · 256 KB</td><td>CS1#</td></tr>
+            </table>
+          </div>
+          <details class="solution">
+            <summary>Ver configuración completa de registros</summary>
+            <ul>
+              <li><code>CSBR0 = $00000001</code> → BA=$00000, EBI=00, BW=00 (ROM 32b), SUPER=0, ENABLE=1</li>
+              <li><code>CSOR0 = $FFFFC001</code> → BAM=$FFFFC (16 KB), WS=0, RW=0, MRW=1 (solo lectura)</li>
+              <li><code>RAMBAR = $00004035</code> → BA=$00004, WP=0, C/I=1, SC=UC=1 (sin acceso a código), SD=UD=0, V=1</li>
+              <li><code>MBAR = $00010001</code> → BA=$0001, sin máscaras, V=1</li>
+              <li><code>CSBR1 = $00040001</code> / <code>CSOR1 = $FFFC0004</code> → RAM externa 256 KB, 1 estado de espera, lectura/escritura</li>
+              <li><code>CSBR2 = $00020001</code> / <code>CSOR2 = $FFFF0000</code> → E/S externa 64 KB</li>
+            </ul>
+          </details>
+        </div>
+
+        <div class="card" id="prob-pulsometro">
+          <span class="eyebrow">Caso 2 · examen real</span>
+          <h2>Noviembre 2015 — Pulsómetro portable (MCF5272 a 66 MHz)</h2>
+          <p>Módulo emisor/receptor de IR conectado directamente al bus externo (puerto de 8 bits, <code>P_AD</code>, <code>P_MUESTRA</code>, <code>P_DEDO</code>); módulo de visualización en un puerto de 8 bits (<code>P_DISPLAY</code>).</p>
+          <div class="codebox">MBAR_MEM     EQU  $00200000      CSBR0 EQU MBAR_MEM+$40
+                                   CSOR0 EQU MBAR_MEM+$44  (ROM 16 bits, 512 KB)
+            ORG  $100000
+FREC_CARD   DS.B 1
+ERROR       DS.B 1
+BUFFER_PULSO DS.B N_MUESTRAS     <span class="dim">; N_MUESTRAS = 2000</span>
+PILA        DS.B TAMPILA
+
+P_DEDO      ORG  $700000        <span class="dim">; módulo IR, puerto de 8 bits</span>
+P_AD        DS.B 1
+P_MUESTRA   DS.B 1
+
+P_DISPLAY   ORG  $600000        <span class="dim">; módulo de visualización, puerto de 8 bits</span>
+            DS.B 1</div>
+          <p class="muted">Pista: la RAM usada son los 4 KB de RAM interna (vía RAMBAR) — no hay chip de RAM externa en el enunciado.</p>
+
+          <h3 style="margin-top:14px;">1.1 — Completa el mapa de memoria</h3>
+          <div id="pulso-table"></div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkRanges('pulso')">Comprobar</button>
+            <button class="btn ghost" onclick="fillRanges('pulso')">Rellenar solución</button>
+            <span class="result-chip" id="pulso-score">0/5</span>
+          </div>
+          <details class="solution">
+            <summary>Ver explicación — por qué es ese rango</summary>
+            <ul>
+              <li><strong>ROM ($00000000–$0007FFFF):</strong> el enunciado dice "ROM 16 bits, 512 KB" y nada fija su base, así que se le asigna la dirección más baja posible, $00000000. 512 KB = $80000 bytes → último byte en $0007FFFF.</li>
+              <li><strong>RAM interna ($00100000–$00100FFF):</strong> <code>FREC_CARD</code>, <code>ERROR</code>, <code>BUFFER_PULSO</code> (N_MUESTRAS=2000 bytes) y <code>PILA</code> se declaran tras <code>ORG $100000</code>, dentro de la RAM interna del MCF5272. Esa RAM es siempre de <strong>4 KB fijos</strong> (vía RAMBAR), así que el bloque ocupa $00100000-$00100FFF aunque las variables sumen menos.</li>
+              <li><strong>Módulo SIM ($00200000–$0020FFFF):</strong> <code>MBAR_MEM EQU $00200000</code> fija la base; la ventana de registros internos es siempre de <strong>64 KB</strong>.</li>
+              <li><strong>Módulo IR ($00700000–$00700002):</strong> <code>P_DEDO ORG $700000</code>, luego <code>P_AD DS.B 1</code> y <code>P_MUESTRA DS.B 1</code> ocupan, en orden, $700000, $700001 y $700002.</li>
+              <li><strong>Display ($00600000–$00600000):</strong> <code>P_DISPLAY ORG $600000</code> con un único <code>DS.B 1</code> → ocupa solo esa dirección.</li>
+            </ul>
+          </details>
+
+          <h3 style="margin-top:18px;">1.3 — Configura CSBR1 / CSOR1 (módulo IR, sin estados de espera)</h3>
+          <div class="field-row" id="pulso-regs"></div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkRegFields('pulso')">Comprobar registros</button>
+            <span class="result-chip" id="pulso-reg-score">0/11</span>
+          </div>
+          <details class="solution">
+            <summary>Ver justificación completa</summary>
+            <ul>
+              <li><strong>RAMBAR</strong>=$00100035 — RAM interna en $00100000, sin máscara para datos (solo se inhabilita código).</li>
+              <li><strong>CSBR1</strong>=$00700D01 — BA=$00700; EBI=11 (SRAM de 8 bits); BW=01 (puerto de 8 bits); SUPER=0; ENABLE=1.</li>
+              <li><strong>CSOR1</strong>=$FFFFF000 — BAM=$FFFFF (bloque mínimo de 4 KB, el módulo solo ocupa 3 bytes); WS=0 (sin estados de espera); RW=0, MRW=0 (lectura y escritura).</li>
+              <li>Mapa: ROM $00000000-$0007FFFF · RAM $00100000-$00100FFF · SIM $00200000-$0020FFFF · Módulo IR $00700000-$00700002 · Display $00600000-$00600000.</li>
+            </ul>
+          </details>
+        </div>
+
+        <div class="card" id="prob-adquisicion">
+          <span class="eyebrow">Caso 3 · examen real</span>
+          <h2>SDG1 — Parcial 13/11/2017 — Adquisición de datos y estadísticos</h2>
+          <p>MCF5272 a 66 MHz. Pantalla de solo escritura (32 bits, 64 KB). Conversor A/D de 8 bits + pulsador comparten zona de direcciones. Usa la RAM interna del microcontrolador.</p>
+          <div class="codebox">MBAR_MEM   EQU  $20000000     CSBR0 EQU MBAR_MEM+$40  (EPROM 16 bits, 128 KB)
+                                CSBR1 EQU MBAR_MEM+$48  (no usado en esta parte)
+            ORG  $MMMMMMMM      <span class="dim">; RAM interna</span>
+CONT       DS.L 1
+STD1..STD4 DS.L 1  (×4)
+ESTADO     DS.B 1
+BUFFER     DS.B N_MUESTRAS     <span class="dim">; N_MUESTRAS = 1000</span>
+PILA       DS.B TAMPILA
+
+           ORG  $30000000      <span class="dim">; ADC + pulsador</span>
+ADC        DS.B 1
+PULSADOR   DS.B 1
+
+           ORG  $10000000      <span class="dim">; pantalla, CS2#</span>
+PANTALLA   DS.L $TTTTTTTT
+
+INICIO     MOVE.L #$00000201,D0
+           MOVE.L D0,CSBR0     <span class="dim">; CSBR0 ya viene fijado</span></div>
+
+          <h3 style="margin-top:14px;">1.1 — Completa el mapa de memoria</h3>
+          <div id="adq-table"></div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkRanges('adq')">Comprobar</button>
+            <button class="btn ghost" onclick="fillRanges('adq')">Rellenar solución</button>
+            <span class="result-chip" id="adq-score">0/5</span>
+          </div>
+          <details class="solution">
+            <summary>Ver explicación — por qué es ese rango</summary>
+            <ul>
+              <li><strong>EPROM ($00000000–$0001FFFF):</strong> el diagrama indica "EPROM 16 bits, 128 KB" sin fijar su base, así que se asigna la dirección más baja posible, $00000000. 128 KB = $20000 bytes → último byte en $0001FFFF.</li>
+              <li><strong>RAM interna ($00020000–$00020FFF):</strong> <code>CONT</code>, <code>STD1-STD4</code>, <code>ESTADO</code>, <code>BUFFER</code> (N_MUESTRAS=1000) y <code>PILA</code> se declaran en la RAM interna (tras <code>ORG $MMMMMMMM</code>), que es siempre de <strong>4 KB fijos</strong>. Como la EPROM ya ocupa hasta $0001FFFF, la siguiente dirección libre más baja para ese bloque de 4 KB es $00020000.</li>
+              <li><strong>ADC + pulsador ($30000000–$30000001):</strong> el listado fija <code>ORG $30000000</code>; <code>ADC DS.B 1</code> y <code>PULSADOR DS.B 1</code> ocupan, en orden, $30000000 y $30000001.</li>
+              <li><strong>Módulo SIM ($20000000–$2000FFFF):</strong> <code>MBAR_MEM EQU $20000000</code> fija la base; la ventana de registros internos es siempre de <strong>64 KB</strong>.</li>
+              <li><strong>Pantalla ($10000000–$1000FFFF):</strong> el listado fija <code>ORG $10000000</code> y el enunciado dice que la pantalla se comporta como una memoria de <strong>64 KB</strong> (de solo escritura) → $10000000-$1000FFFF.</li>
+            </ul>
+          </details>
+
+          <h3 style="margin-top:18px;">1.2 — A partir de CSBR0=$00000201, calcula CSOR0 (30 estados de espera)</h3>
+          <div class="field-row" id="adq-regs"></div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkRegFields('adq')">Comprobar registros</button>
+            <span class="result-chip" id="adq-reg-score">0/5</span>
+          </div>
+          <details class="solution">
+            <summary>Ver justificación completa</summary>
+            <ul>
+              <li><strong>CSBR0</strong>=$00000201 (dado) → BA=$00000, EBI=00 (16/32 bits), BW=10 (puerto de 16 bits), SUPER=0, ENABLE=1.</li>
+              <li><strong>CSOR0</strong>=$FFFE0079 → BAM=$FFFE0 (128 KB = 2^17, se comparan los 15 bits superiores); WS=%11110=30; RW=0; MRW=1 (solo lectura).</li>
+              <li>Mapa: EPROM $00000000-$0001FFFF · RAM interna $00020000-$00020FFF · ADC/pulsador $30000000-$30000001 · SIM $20000000-$2000FFFF · Pantalla $10000000-$1000FFFF.</li>
+            </ul>
+          </details>
+        </div>
+
+      </section>
+
+      <!-- ===================== CSBR/CSOR CALCULADORA ===================== -->
+      <section class="panel" id="tab-registros">
+        <div class="card">
+          <span class="eyebrow">Práctica ilimitada</span>
+          <h2>Configura CSBRn / CSORn para un dispositivo nuevo</h2>
+          <p id="gen-scenario" class="muted">Generando enunciado…</p>
+          <div class="field-row" id="gen-regs"></div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkGenerated()">Comprobar</button>
+            <button class="btn ghost" onclick="newScenario()">Nuevo problema</button>
+            <span class="result-chip" id="gen-score">0/11</span>
+            <span class="scorepill">Aciertos totales: <strong id="gen-total">0</strong></span>
+          </div>
+          <details class="solution" id="gen-solution-wrap">
+            <summary>Ver solución y justificación</summary>
+            <ul id="gen-solution"></ul>
+          </details>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">Práctica ilimitada</span>
+          <h2>Configura RAMBAR para la RAM interna</h2>
+          <p class="muted">Ojo con la trampa clásica: en SC/SD/UC/UD, el <strong>1 prohíbe</strong> el acceso y el <strong>0 lo permite</strong> — al revés de lo que parece a primera vista.</p>
+          <p id="ram-scenario" class="muted">Generando enunciado…</p>
+          <div class="field-row" id="ram-regs"></div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkRam()">Comprobar</button>
+            <button class="btn ghost" onclick="newRam()">Nuevo problema</button>
+            <span class="result-chip" id="ram-score">0/9</span>
+          </div>
+          <details class="solution" id="ram-solution-wrap">
+            <summary>Ver solución y justificación</summary>
+            <ul id="ram-solution"></ul>
+          </details>
+        </div>
+      </section>
+
+      <!-- ===================== ENSAMBLADOR: EA Y PILA ===================== -->
+      <section class="panel" id="tab-asm">
+        <div class="card">
+          <span class="eyebrow">Referencia</span>
+          <h2>Modos de direccionamiento</h2>
+          <p class="muted">Esto no está en la hoja de referencia del examen, así que conviene tenerlo claro. <code>f,d</code> = fuente/destino · <code>dspB</code> = desplazamiento de B bits, rango [-2^(B-1), 2^(B-1)-1].</p>
+          <div class="tablewrap">
+            <table>
+              <tr><th>Modo</th><th>Sintaxis</th><th>Dirección efectiva</th><th>Ejemplo</th></tr>
+              <tr><td>Directo a registro</td><td class="hex">Dn / An</td><td>EA = ese registro</td><td class="hex">MOVE.W D2,D4</td></tr>
+              <tr><td>Inmediato</td><td class="hex">#n</td><td>el operando va en la instrucción (no hay EA)</td><td class="hex">MOVEQ.L #-16,D5</td></tr>
+              <tr><td>Absoluto</td><td class="hex">EA</td><td>la dirección va explícita en la instrucción</td><td class="hex">MOVE.B D1,$1C8</td></tr>
+              <tr><td>Indirecto</td><td class="hex">(An)</td><td>EA = (An)</td><td class="hex">MOVE.B (A1),$2CE</td></tr>
+              <tr><td>Indirecto con postincremento</td><td class="hex">(An)+</td><td>EA = (An); An += tamaño. Para extraer de la pila</td><td class="hex">MOVE.W (A3)+,D4</td></tr>
+              <tr><td>Indirecto con predecremento</td><td class="hex">-(An)</td><td>An -= tamaño; EA = (An) ya decrementado. Para meter en la pila</td><td class="hex">MOVE.L D0,-(A7)</td></tr>
+              <tr><td>Con desplazamiento</td><td class="hex">N(An)</td><td>EA = (An) + N &nbsp;·&nbsp; N = dsp16</td><td class="hex">MOVE.L 8(A0),D0</td></tr>
+              <tr><td>Indexado con escala</td><td class="hex">N(An,Rm*s)</td><td>EA = (An) + (Rm)×s + N &nbsp;·&nbsp; N = dsp8, s∈{1,2,4}</td><td class="hex">MOVE.W 8(A0,D1.L*4),D0</td></tr>
+              <tr><td>Relativo a PC</td><td class="hex">N(PC)</td><td>EA = (PC) + N &nbsp;·&nbsp; solo como fuente</td><td class="hex">LEA 6(PC),A0</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">Práctica ilimitada</span>
+          <h2>Calcula la dirección efectiva</h2>
+          <p id="ea-scenario" class="muted">Generando enunciado…</p>
+          <div class="field-row">
+            <div class="field" style="min-width:160px;">
+              <label>Dirección efectiva (EA)</label>
+              <input class="mono" id="ea-answer" placeholder="hex, sin $">
+            </div>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkEA()">Comprobar</button>
+            <button class="btn ghost" onclick="newEA()">Nuevo problema</button>
+            <span class="result-chip" id="ea-score">—</span>
+          </div>
+          <details class="solution" id="ea-solution-wrap">
+            <summary>Ver desarrollo</summary>
+            <p id="ea-solution" class="mono" style="font-size:14px;"></p>
+          </details>
+        </div>
+
+        <div class="card">
+          <h3>Convenciones de pila (PEA, MOVEM, LINK/UNLK)</h3>
+          <p>Tampoco está en la hoja de referencia — es lo que necesitas para rastrear el contenido de la pila en cualquier ejercicio de software.</p>
+          <ul>
+            <li><code>MOVE.L valor,-(A7)</code> → apila el <strong>valor</strong> (4 bytes); <code>MOVE.L (A7)+,Dn</code> lo desapila.</li>
+            <li><code>PEA etiqueta</code> → apila la <strong>dirección</strong> de la etiqueta (4 bytes), no su contenido.</li>
+            <li><code>JSR</code> / <code>BSR</code> → apilan el PC de retorno antes de saltar (JSR admite cualquier modo; BSR es siempre relativo a PC). <code>RTS</code> lo desapila al volver.</li>
+            <li><code>ADDA.L #-N,A7</code> al entrar en una subrutina → reserva N bytes de variables locales; <code>ADDA.L #N,A7</code> los libera antes del <code>RTS</code>.</li>
+            <li><code>MOVEM.L regs,(A7)</code> guarda varios registros siempre en el mismo orden <strong>D0…D7, A0…A7</strong>, sin importar el orden en que los escribas en la instrucción.</li>
+            <li><code>LINK An,#-m</code> ≈ apila An (4 bytes), copia A7 en An, reserva m bytes más; <code>UNLK An</code> lo deshace.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">Examen real · Nov-2015 (Pulsómetro)</span>
+          <h2>Contenido de la pila durante una llamada a subrutina</h2>
+          <div class="codebox">PROGRAMA PRINCIPAL                    PROCESA_FCARD  ADDA.L  #-16,A7
+  PEA      FREC_CARD                               MOVEM.L D0-D2/A0,(A7)
+  BSR      PROCESA_FCARD      ──llama──▶            LEA     BUFFER_PULSO,A0   <span class="dim">; punto M, justo aquí</span>
+  ADDA.L   #4,A7                                    ...</div>
+          <p>El programa principal apila primero la <em>dirección</em> de <code>FREC_CARD</code> (parámetro) con <code>PEA</code>, y luego <code>BSR</code> apila el PC de retorno. Dentro de la subrutina, <code>ADDA.L #-16,A7</code> reserva 16 bytes y <code>MOVEM.L D0-D2/A0,(A7)</code> guarda 4 registros (D0,D1,D2,A0 = 16 bytes) en ese hueco.</p>
+          <div class="field-row">
+            <div class="field">
+              <label>Bytes ocupados en el punto M</label>
+              <input class="mono" id="pulso-stack-bytes" placeholder="bytes">
+            </div>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkStackBytes()">Comprobar</button>
+            <span class="result-chip" id="pulso-stack-score">—</span>
+          </div>
+          <details class="solution">
+            <summary>Ver pila completa, de arriba (A7 actual) a abajo (A7 inicial)</summary>
+            <ol style="margin:10px 0 0; padding-left:22px; font-size:14px;">
+              <li>D0 (4 bytes) — guardado por MOVEM</li>
+              <li>D1 (4 bytes) — guardado por MOVEM</li>
+              <li>D2 (4 bytes) — guardado por MOVEM</li>
+              <li>A0 (4 bytes) — guardado por MOVEM</li>
+              <li>PC de retorno (4 bytes) — apilado por el BSR</li>
+              <li>Dirección de FREC_CARD (4 bytes) — apilada por el PEA del programa principal</li>
+            </ol>
+            <p class="muted">Total: 24 bytes entre el A7 actual (en el punto M) y el A7 inicial del programa principal.</p>
+          </details>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">Práctica ilimitada</span>
+          <h2>Ocupación de la pila en una llamada a subrutina</h2>
+          <p id="stk-scenario" class="muted">Generando enunciado…</p>
+          <div class="field-row">
+            <div class="field" style="min-width:160px;">
+              <label>Bytes ocupados en el punto M</label>
+              <input class="mono" id="stk-answer" placeholder="bytes">
+            </div>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkStack()">Comprobar</button>
+            <button class="btn ghost" onclick="newStack()">Nuevo problema</button>
+            <span class="result-chip" id="stk-score">—</span>
+          </div>
+          <details class="solution" id="stk-solution-wrap">
+            <summary>Ver desglose</summary>
+            <ol id="stk-solution" style="margin:10px 0 0; padding-left:22px; font-size:14px;"></ol>
+          </details>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">Práctica ilimitada</span>
+          <h2>Dimensionar la pila: A7 inicial y TAMPILA</h2>
+          <p class="muted">Dos trampas típicas: el A7 inicial es la <strong>última dirección de la RAM + 1</strong> (no el último byte, y las variables no se restan aquí); TAMPILA sale de restar al tamaño total de la RAM los bytes que ya ocupan las variables.</p>
+          <p id="dim-scenario" class="muted">Generando enunciado…</p>
+          <div class="codebox" id="dim-code"></div>
+          <div class="field-row">
+            <div class="field" style="min-width:160px;">
+              <label>A7 inicial</label>
+              <input class="mono" id="dim-a7" placeholder="hex, sin $">
+            </div>
+            <div class="field" style="min-width:140px;">
+              <label>TAMPILA (bytes)</label>
+              <input class="mono" id="dim-tampila" placeholder="decimal">
+            </div>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkDim()">Comprobar</button>
+            <button class="btn ghost" onclick="newDim()">Nuevo problema</button>
+            <span class="result-chip" id="dim-score">0/2</span>
+          </div>
+          <details class="solution" id="dim-solution-wrap">
+            <summary>Ver desarrollo</summary>
+            <ul id="dim-solution"></ul>
+          </details>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">Práctica ilimitada</span>
+          <h2>Trazar un bucle en ensamblador</h2>
+          <p class="muted"><code>(A0)+</code> es el <strong>contenido</strong> de esa dirección (no la dirección); la inicialización del registro va <strong>fuera</strong> del bucle.</p>
+          <div class="codebox" id="trc-code"></div>
+          <div class="field-row">
+            <div class="field" style="min-width:120px;">
+              <label>D0 final (hex, 1 byte)</label>
+              <input class="mono" id="trc-d0" placeholder="hex, sin $">
+            </div>
+            <div class="field" style="min-width:220px;">
+              <label>¿Qué calcula la rutina?</label>
+              <select id="trc-kind" style="font-family:var(--f-mono); font-size:14px; padding:7px 9px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--text); width:100%;">
+                <option value="">— elige —</option>
+                <option value="suma">Acumulador: suma de todos los bytes</option>
+                <option value="maximo">El valor máximo del buffer</option>
+                <option value="minimo">El valor mínimo del buffer</option>
+              </select>
+            </div>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkTrace()">Comprobar</button>
+            <button class="btn ghost" onclick="newTrace()">Nuevo problema</button>
+            <span class="result-chip" id="trc-score">0/2</span>
+          </div>
+          <details class="solution" id="trc-solution-wrap">
+            <summary>Ver desarrollo</summary>
+            <p id="trc-solution" class="mono" style="font-size:14px;"></p>
+          </details>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">Práctica ilimitada</span>
+          <h2>Análisis de C: valor vs. referencia</h2>
+          <p class="muted">Un parámetro sin <code>&amp;</code> es una <strong>copia local</strong> — cambiarlo dentro de la función no afecta a la variable del <code>main</code>. Un puntero (<code>int *p</code>, llamado con <code>&amp;x</code>) sí permite modificar la variable original a través de <code>*p</code>.</p>
+          <div class="codebox" id="c-code"></div>
+          <div class="field-row">
+            <div class="field">
+              <label>varA final</label>
+              <input class="mono" id="c-vara" placeholder="entero">
+            </div>
+            <div class="field">
+              <label>varB final</label>
+              <input class="mono" id="c-varb" placeholder="entero">
+            </div>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" onclick="checkC()">Comprobar</button>
+            <button class="btn ghost" onclick="newC()">Nuevo problema</button>
+            <span class="result-chip" id="c-score">0/2</span>
+          </div>
+          <details class="solution" id="c-solution-wrap">
+            <summary>Ver traza paso a paso</summary>
+            <ul id="c-solution"></ul>
+          </details>
+        </div>
+      </section>
+
+      <!-- ===================== TEST RÁPIDO ===================== -->
+      <section class="panel" id="tab-test">
+        <div class="card">
+          <div class="taglist">
+            <span class="tag">MBAR/RAMBAR</span><span class="tag">CSBR/CSOR</span><span class="tag">Conceptos clave</span>
+          </div>
+          <div class="btnrow" style="margin-bottom:6px;">
+            <span class="scorepill">Pregunta <strong id="q-index">1</strong> / <span id="q-total">14</span></span>
+            <span class="scorepill">Aciertos: <strong id="q-score">0</strong></span>
+            <button class="btn ghost" onclick="restartQuiz()" style="margin-left:auto;">Reiniciar</button>
+          </div>
+          <div class="quiz-q" id="q-text"></div>
+          <div class="quiz-opts" id="q-opts"></div>
+          <div class="quiz-explain" id="q-explain"></div>
+          <div class="btnrow">
+            <button class="btn primary" id="q-next" onclick="nextQuestion()" style="display:none;">Siguiente →</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  <footer class="note">Contenido basado en los apuntes de la asignatura y en exámenes de Nov-2015 y SDG1 2017-18. Revisa siempre contra tus propios apuntes.</footer>
+</div>
+
+<script>
+  // ---------- tabs ----------
+  document.querySelectorAll('.rail-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.rail-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---------- countdown ----------
+  (function(){
+    const exam = new Date(2026,9,27,0,0,0); // 27 oct 2026 (mes 0-indexado)
+    const now = new Date();
+    const days = Math.ceil((exam - now)/86400000);
+    const el = document.getElementById('countdown');
+    if(days > 1) el.innerHTML = `<strong>${days}</strong> días para el parcial · martes 27 de octubre`;
+    else if(days === 1) el.innerHTML = `<strong>mañana</strong> es el parcial`;
+    else if(days === 0) el.innerHTML = `<strong>hoy</strong> es el parcial — ¡suerte!`;
+    else el.innerHTML = `parcial del 27 de octubre ya pasado`;
+  })();
+
+  // ---------- helpers ----------
+  function normHex(s){ if(s===undefined||s===null) return ''; return s.toString().trim().toUpperCase().replace(/^\$/,'').replace(/^0+(?=.)/,''); }
+  function normBit(s){ if(s===undefined||s===null) return ''; return s.toString().trim().replace(/^%/,''); }
+  function hex(n,digits){ return (n>>>0).toString(16).toUpperCase().padStart(digits,'0'); }
+  function setField(input, ok){ input.classList.remove('ok','bad'); input.classList.add(ok?'ok':'bad'); }
+
+  // ================= MAPA DE MEMORIA TABLES =================
+  const ranges = {
+    pulso: {
+      cols: ['Dispositivo','Inicio','Fin'],
+      rows: [
+        ['ROM (programa) · 512 KB, CS0#', '00000000', '0007FFFF'],
+        ['RAM interna (variables, buffer, pila) · 4 KB', '00100000', '00100FFF'],
+        ['Módulo SIM · 64 KB', '00200000', '0020FFFF'],
+        ['Módulo emisor/receptor IR · 3 bytes', '00700000', '00700002'],
+        ['Módulo de visualización · 1 byte', '00600000', '00600000'],
+      ]
+    },
+    adq: {
+      cols: ['Dispositivo','Inicio','Fin'],
+      rows: [
+        ['EPROM (programa) · 128 KB, CS0#', '00000000', '0001FFFF'],
+        ['RAM interna · 4 KB', '00020000', '00020FFF'],
+        ['ADC + pulsador · 2 bytes', '30000000', '30000001'],
+        ['Módulo SIM · 64 KB', '20000000', '2000FFFF'],
+        ['Pantalla (solo escritura) · 64 KB, CS2#', '10000000', '1000FFFF'],
+      ]
+    }
+  };
+
+  function buildRangeTable(key){
+    const data = ranges[key];
+    const wrap = document.getElementById(key+'-table');
+    let html = '<div class="tablewrap"><table><tr><th>Dispositivo</th><th>Inicio ($)</th><th>Fin ($)</th></tr>';
+    data.rows.forEach((row,i)=>{
+      html += `<tr><td>${row[0]}</td>
+        <td><input class="mono" data-key="${key}" data-i="${i}" data-f="s" placeholder="00000000" style="width:120px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface);color:var(--text);"></td>
+        <td><input class="mono" data-key="${key}" data-i="${i}" data-f="e" placeholder="00000000" style="width:120px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface);color:var(--text);"></td></tr>`;
+    });
+    html += '</table></div>';
+    wrap.innerHTML = html;
+  }
+  buildRangeTable('pulso');
+  buildRangeTable('adq');
+
+  function checkRanges(key){
+    const data = ranges[key];
+    let correct = 0;
+    data.rows.forEach((row,i)=>{
+      const sInput = document.querySelector(`input[data-key="${key}"][data-i="${i}"][data-f="s"]`);
+      const eInput = document.querySelector(`input[data-key="${key}"][data-i="${i}"][data-f="e"]`);
+      const sOk = normHex(sInput.value) === normHex(row[1]);
+      const eOk = normHex(eInput.value) === normHex(row[2]);
+      setField(sInput, sOk); setField(eInput, eOk);
+      if(sOk && eOk) correct++;
+    });
+    document.getElementById(key+'-score').textContent = correct+'/'+data.rows.length;
+    document.getElementById(key+'-score').className = 'result-chip ' + (correct===data.rows.length?'ok':'bad');
+  }
+  function fillRanges(key){
+    const data = ranges[key];
+    data.rows.forEach((row,i)=>{
+      document.querySelector(`input[data-key="${key}"][data-i="${i}"][data-f="s"]`).value = row[1];
+      document.querySelector(`input[data-key="${key}"][data-i="${i}"][data-f="e"]`).value = row[2];
+    });
+    checkRanges(key);
+  }
+
+  // ================= REGISTER FIELD EXERCISES (fixed, real exams) =================
+  const regFields = ['BA','EBI','BW','SUPER','ENABLE','BAM','WS','RW','MRW'];
+  const regAnswers = {
+    pulso: { BA:'700', EBI:'11', BW:'01', SUPER:'0', ENABLE:'1', BAM:'FFFFF', WS:'0', RW:'0', MRW:'0', CSBR_FINAL:'00700D01', CSOR_FINAL:'FFFFF000' },
+    adq:   { BAM:'FFFE0', WS:'30', RW:'0', MRW:'1', CSOR_FINAL:'FFFE0079' } // only CSOR0 asked (CSBR0 given)
+  };
+  const fieldHint = { BA:'hex, sin $', EBI:'bin, 2 bits', BW:'bin, 2 bits', SUPER:'0 ó 1', ENABLE:'0 ó 1',
+                       BAM:'hex, sin $', WS:'decimal (0-30)', RW:'0 ó 1', MRW:'0 ó 1',
+                       CSBR_FINAL:'hex, 8 dígitos', CSOR_FINAL:'hex, 8 dígitos' };
+  function buildRegInputs(key, fields, finalFields){
+    const wrap = document.getElementById(key+'-regs');
+    let html = fields.map(f=>`
+      <div class="field">
+        <label>${f}</label>
+        <input class="mono" data-reg="${key}" data-f="${f}" placeholder="${fieldHint[f]||'?'}">
+      </div>`).join('');
+    if(finalFields){
+      html += finalFields.map(ff=>`
+        <div class="field" style="min-width:150px;">
+          <label>${ff.label} — valor completo</label>
+          <input class="mono" data-reg="${key}" data-f="${ff.key}" placeholder="${fieldHint[ff.key]}">
+        </div>`).join('');
+    }
+    wrap.innerHTML = html;
+  }
+  buildRegInputs('pulso', regFields, [{key:'CSBR_FINAL',label:'CSBR1'},{key:'CSOR_FINAL',label:'CSOR1'}]);
+  buildRegInputs('adq', ['BAM','WS','RW','MRW'], [{key:'CSOR_FINAL',label:'CSOR0'}]);
+
+  function checkRegFields(key){
+    const answers = regAnswers[key];
+    let correct=0, total=0;
+    Object.keys(answers).forEach(f=>{
+      total++;
+      const input = document.querySelector(`input[data-reg="${key}"][data-f="${f}"]`);
+      if(!input) return;
+      const ok = normHex(input.value) === normHex(answers[f]) || normBit(input.value)===normBit(answers[f]);
+      setField(input, ok);
+      if(ok) correct++;
+    });
+    const scoreEl = document.getElementById(key+'-reg-score');
+    scoreEl.textContent = correct+'/'+total;
+    scoreEl.className = 'result-chip ' + (correct===total?'ok':'bad');
+  }
+
+  // ================= CSBR/CSOR RANDOM GENERATOR =================
+  const sizeOptions = [
+    {label:'4 KB', bytes:4096, m:0}, {label:'8 KB', bytes:8192, m:1},
+    {label:'16 KB', bytes:16384, m:2}, {label:'32 KB', bytes:32768, m:3},
+    {label:'64 KB', bytes:65536, m:4}, {label:'128 KB', bytes:131072, m:5},
+    {label:'256 KB', bytes:262144, m:6}, {label:'512 KB', bytes:524288, m:7},
+    {label:'1 MB', bytes:1048576, m:8}
+  ];
+  const baLeadNibbles = [0x0,0x1,0x2,0x3,0x7,0xA];
+  const wsOptions = [0,1,2,4,8,16,30];
+  let current = null, totalCorrectEver = parseInt(localStorage.getItem('sdgi-gen-total')||'0',10);
+  document.getElementById('gen-total').textContent = totalCorrectEver;
+
+  function newScenario(){
+    const size = sizeOptions[Math.floor(Math.random()*sizeOptions.length)];
+    const width = [8,16,32][Math.floor(Math.random()*3)];
+    const type = ['ROM','RAM','IO'][Math.floor(Math.random()*3)];
+    const csn = Math.floor(Math.random()*6)+1; // CS1..CS6 (deja CS0/7 para casos especiales)
+    const superv = Math.random() < 0.25 ? 1 : 0;
+    const ws = wsOptions[Math.floor(Math.random()*wsOptions.length)];
+
+    let leadNibble = baLeadNibbles[Math.floor(Math.random()*baLeadNibbles.length)];
+    let baRaw = (leadNibble<<16) | Math.floor(Math.random()*0x10000);
+    let ba = (baRaw >>> size.m) << size.m; // alinear
+    ba = ba & 0xFFFFF;
+
+    const ebi = width===8 ? 3 : 0;
+    const bw = width===8 ? 1 : (width===16 ? 2 : 0);
+    const enable = 1;
+    const bam = (0xFFFFF << size.m) & 0xFFFFF;
+    let rw, mrw, accessLabel;
+    if(type==='ROM'){ rw=0; mrw=1; accessLabel='una ROM externa de solo lectura'; }
+    else if(type==='IO'){ rw=1; mrw=1; accessLabel='un periférico de solo escritura'; }
+    else { rw=0; mrw=0; accessLabel='una RAM externa de lectura/escritura'; }
+
+    const csbr = (ba<<12) | (ebi<<10) | (bw<<8) | (superv<<7) | enable;
+    const csor = (bam<<12) | (ws<<2) | (rw<<1) | mrw;
+
+    current = {size,width,type,csn,superv,ws,ba,ebi,bw,enable,bam,rw,mrw,csbr,csor,accessLabel};
+
+    const baseAddr = hex(ba<<12, 8);
+    document.getElementById('gen-scenario').innerHTML =
+      `El dispositivo conectado a <strong>CS${csn}#</strong> es ${accessLabel} de <strong>${size.label}</strong>, `+
+      `con un puerto de <strong>${width} bits</strong>, ${superv? 'accesible <strong>solo en modo supervisor</strong>' : 'sin restricción de modo'}, `+
+      `que necesita <strong>${ws}</strong> estado(s) de espera. Dirección base asignada: <code class="hex">$${baseAddr}</code>.`;
+
+    buildRegInputs('gen', regFields, [{key:'CSBR_FINAL',label:'CSBR'+csn},{key:'CSOR_FINAL',label:'CSOR'+csn}]);
+    document.getElementById('gen-score').textContent = '0/11';
+    document.getElementById('gen-score').className = 'result-chip';
+    document.getElementById('gen-solution-wrap').open = false;
+    document.getElementById('gen-solution').innerHTML = '';
+    document.querySelectorAll('input[data-reg="gen"]').forEach(i=>i.classList.remove('ok','bad'));
+  }
+
+  function checkGenerated(){
+    if(!current) return;
+    const c = current;
+    const answers = {
+      BA: hex(c.ba,5), EBI: c.ebi.toString(2).padStart(2,'0'), BW: c.bw.toString(2).padStart(2,'0'),
+      SUPER: String(c.superv), ENABLE: String(c.enable),
+      BAM: hex(c.bam,5), WS: String(c.ws), RW: String(c.rw), MRW: String(c.mrw),
+      CSBR_FINAL: hex(c.csbr,8), CSOR_FINAL: hex(c.csor,8)
+    };
+    const allFields = regFields.concat(['CSBR_FINAL','CSOR_FINAL']);
+    let correct=0;
+    allFields.forEach(f=>{
+      const input = document.querySelector(`input[data-reg="gen"][data-f="${f}"]`);
+      const ok = normHex(input.value)===normHex(answers[f]) || normBit(input.value)===normBit(answers[f]);
+      setField(input, ok);
+      if(ok) correct++;
+    });
+    document.getElementById('gen-score').textContent = correct+'/'+allFields.length;
+    document.getElementById('gen-score').className = 'result-chip ' + (correct===allFields.length?'ok':'bad');
+    if(correct===allFields.length){
+      totalCorrectEver++;
+      localStorage.setItem('sdgi-gen-total', totalCorrectEver);
+      document.getElementById('gen-total').textContent = totalCorrectEver;
+    }
+    document.getElementById('gen-solution').innerHTML = `
+      <li><strong>BA</strong> = $${answers.BA} → dirección base ÷ $1000</li>
+      <li><strong>EBI</strong> = ${answers.EBI} → ${c.width===8?'memoria de 8 bits sin byte-enable':'memoria de 16/32 bits con byte-enable'}</li>
+      <li><strong>BW</strong> = ${answers.BW} → puerto de ${c.width} bits</li>
+      <li><strong>SUPER</strong> = ${answers.SUPER} → ${c.superv?'solo accesible en modo supervisor':'sin restricción de modo'}</li>
+      <li><strong>ENABLE</strong> = 1 → se habilita la salida CS${c.csn}#</li>
+      <li><strong>BAM</strong> = $${answers.BAM} → se enmascaran los ${Math.log2(c.size.bytes)-12} bits menos significativos (tamaño ${c.size.label})</li>
+      <li><strong>WS</strong> = ${answers.WS} → ${c.ws} estado(s) de espera indicados en el enunciado (campo de 5 bits, en decimal)</li>
+      <li><strong>RW / MRW</strong> = ${answers.RW} / ${answers.MRW} → ${c.type==='RAM'?'lectura y escritura libre':(c.type==='ROM'?'solo lectura':'solo escritura')}</li>
+      <li><strong>CSBR${c.csn}</strong> = $${hex(c.csbr,8)} &nbsp;·&nbsp; <strong>CSOR${c.csn}</strong> = $${hex(c.csor,8)}</li>`;
+    document.getElementById('gen-solution-wrap').open = true;
+  }
+  newScenario();
+
+  // ================= RAMBAR =================
+  const ramRegFields = ['BA','WP','CI','SC','SD','UC','UD','V'];
+  const ramFieldHint = {BA:'hex, sin $', WP:'0 ó 1', CI:'0 ó 1', SC:'0 ó 1', SD:'0 ó 1', UC:'0 ó 1', UD:'0 ó 1', V:'0 ó 1', RAMBAR_FINAL:'hex, 8 dígitos'};
+  const ramScenarios = [
+    {label:'solo accesos de datos (código prohibido, en ambos modos)', sc:1, sd:0, uc:1, ud:0},
+    {label:'solo modo supervisor (usuario prohibido, código y datos)', sc:0, sd:0, uc:1, ud:1},
+    {label:'solo modo usuario (supervisor prohibido, código y datos)', sc:1, sd:1, uc:0, ud:0},
+    {label:'sin restricciones (todo permitido)', sc:0, sd:0, uc:0, ud:0},
+  ];
+  let currentRam = null;
+  function buildRamInputs(){
+    const wrap = document.getElementById('ram-regs');
+    wrap.innerHTML = ramRegFields.map(f=>`
+      <div class="field"><label>${f}</label><input class="mono" data-reg="ram" data-f="${f}" placeholder="${ramFieldHint[f]}"></div>`).join('')
+      + `<div class="field" style="min-width:150px;"><label>RAMBAR — valor completo</label><input class="mono" data-reg="ram" data-f="RAMBAR_FINAL" placeholder="${ramFieldHint.RAMBAR_FINAL}"></div>`;
+  }
+  function newRam(){
+    const leadNibble = baLeadNibbles[Math.floor(Math.random()*baLeadNibbles.length)];
+    const ba = ((leadNibble<<16) | Math.floor(Math.random()*0x10000)) & 0xFFFFF;
+    const wp = Math.random()<0.2 ? 1 : 0;
+    const ci = 1;
+    const sc = ramScenarios[Math.floor(Math.random()*ramScenarios.length)];
+    const v = 1;
+    const rambar = ((ba<<12) | (wp<<8) | (ci<<5) | (sc.sc<<4) | (sc.sd<<3) | (sc.uc<<2) | (sc.ud<<1) | v) >>> 0;
+    currentRam = {ba, wp, ci, sc:sc.sc, sd:sc.sd, uc:sc.uc, ud:sc.ud, v, rambar, label:sc.label};
+    document.getElementById('ram-scenario').innerHTML =
+      `La RAM interna se coloca en <code class="hex">$${hex(ba<<12,8)}</code>, se ${wp?'<strong>protege contra escritura</strong>':'permite leer y escribir'}, `+
+      `y se configura para <strong>${sc.label}</strong>.`;
+    buildRamInputs();
+    document.getElementById('ram-score').textContent = '0/9';
+    document.getElementById('ram-score').className = 'result-chip';
+    document.getElementById('ram-solution-wrap').open = false;
+    document.getElementById('ram-solution').innerHTML = '';
+  }
+  function checkRam(){
+    if(!currentRam) return;
+    const c = currentRam;
+    const answers = {BA:hex(c.ba,5), WP:String(c.wp), CI:String(c.ci), SC:String(c.sc), SD:String(c.sd), UC:String(c.uc), UD:String(c.ud), V:String(c.v), RAMBAR_FINAL:hex(c.rambar,8)};
+    let correct=0; const fields = ramRegFields.concat(['RAMBAR_FINAL']);
+    fields.forEach(f=>{
+      const input = document.querySelector(`input[data-reg="ram"][data-f="${f}"]`);
+      const ok = normHex(input.value)===normHex(answers[f]);
+      setField(input, ok);
+      if(ok) correct++;
+    });
+    document.getElementById('ram-score').textContent = correct+'/'+fields.length;
+    document.getElementById('ram-score').className = 'result-chip ' + (correct===fields.length?'ok':'bad');
+    document.getElementById('ram-solution').innerHTML = `
+      <li><strong>BA</strong> = $${answers.BA} → dirección base ÷ $1000</li>
+      <li><strong>WP</strong> = ${answers.WP} → ${c.wp?'protegida contra escritura':'se permite escribir'}</li>
+      <li><strong>C/I</strong> = 1 → valor habitual</li>
+      <li><strong>SC/SD/UC/UD</strong> = ${answers.SC}/${answers.SD}/${answers.UC}/${answers.UD} → ${c.label} (recuerda: 1 prohíbe, 0 permite)</li>
+      <li><strong>V</strong> = 1 → RAM interna habilitada</li>
+      <li><strong>RAMBAR</strong> = $${hex(c.rambar,8)}</li>`;
+    document.getElementById('ram-solution-wrap').open = true;
+  }
+  newRam();
+
+  // ================= DIRECCIÓN EFECTIVA =================
+  let currentEA = null;
+  function solutionTextEA(c){
+    return c.kind==='disp'
+      ? `EA = (${c.reg}) + N = $${hex(c.anVal,8)} + (${c.n}) = $${hex(c.ea,8)}`
+      : `EA = (${c.reg}) + (${c.dreg})×${c.scale} + N = $${hex(c.anVal,8)} + ($${hex(c.dVal,8)}×${c.scale}) + (${c.n}) = $${hex(c.ea,8)}`;
+  }
+  function newEA(){
+    const kind = Math.random() < 0.5 ? 'disp' : 'indexed';
+    const reg = 'A'+Math.floor(Math.random()*7); // A0-A6
+    const anVal = Math.floor(Math.random()*0xFFFFFFFF);
+    if(kind==='disp'){
+      const n = Math.floor(Math.random()*33) - 8; // -8..24
+      const ea = (anVal + n) >>> 0;
+      currentEA = {kind, reg, anVal, n, ea};
+      document.getElementById('ea-scenario').innerHTML =
+        `Calcula la dirección efectiva de <code class="hex">MOVE.W ${n}(${reg}),D0</code> si ${reg} = $${hex(anVal,8)}.`;
+    } else {
+      const dreg = 'D'+Math.floor(Math.random()*8);
+      const n = Math.floor(Math.random()*17) - 4; // -4..12
+      const scale = [1,2,4][Math.floor(Math.random()*3)];
+      const dVal = Math.floor(Math.random()*256);
+      const ea = (anVal + dVal*scale + n) >>> 0;
+      currentEA = {kind, reg, anVal, dreg, n, scale, dVal, ea};
+      document.getElementById('ea-scenario').innerHTML =
+        `Calcula la dirección efectiva de <code class="hex">MOVE.W ${n}(${reg},${dreg}.L*${scale}),D0</code> si ${reg} = $${hex(anVal,8)} y ${dreg} = $${hex(dVal,8)}.`;
+    }
+    document.getElementById('ea-answer').value = '';
+    document.getElementById('ea-answer').classList.remove('ok','bad');
+    document.getElementById('ea-score').textContent = '—';
+    document.getElementById('ea-score').className = 'result-chip';
+    document.getElementById('ea-solution').textContent = solutionTextEA(currentEA);
+    document.getElementById('ea-solution-wrap').open = false;
+  }
+  function checkEA(){
+    if(!currentEA) return;
+    const input = document.getElementById('ea-answer');
+    const ok = normHex(input.value) === normHex(hex(currentEA.ea,8));
+    setField(input, ok);
+    const chip = document.getElementById('ea-score');
+    chip.textContent = ok ? 'correcto' : 'revisa';
+    chip.className = 'result-chip ' + (ok?'ok':'bad');
+    document.getElementById('ea-solution').textContent = solutionTextEA(currentEA);
+    document.getElementById('ea-solution-wrap').open = true;
+  }
+  newEA();
+
+  // ================= PILA: PULSÓMETRO =================
+  function checkStackBytes(){
+    const input = document.getElementById('pulso-stack-bytes');
+    const ok = input.value.trim() === '24';
+    setField(input, ok);
+    const chip = document.getElementById('pulso-stack-score');
+    chip.textContent = ok ? 'correcto (24 bytes)' : 'revisa';
+    chip.className = 'result-chip ' + (ok?'ok':'bad');
+  }
+
+  // ================= PILA: GENERADOR ALEATORIO =================
+  let currentStack = null;
+  const stkRegPool = ['D0','D1','D2','D3','D4','A0','A1','A2'];
+  function stackSolutionList(c){
+    const items = [];
+    // MOVEM siempre almacena en orden fijo D0..D7,A0..A7, sin importar el orden escrito en la instrucción
+    const fixedOrder = c.regs.slice().sort((a,b)=>stkRegPool.indexOf(a)-stkRegPool.indexOf(b));
+    fixedOrder.forEach(r=>items.push(`${r} (4 bytes) — guardado por MOVEM (orden fijo D0..D7,A0..A7, no el escrito)`));
+    items.push('PC de retorno (4 bytes) — apilado por el BSR');
+    for(let i=c.params.length-1;i>=0;i--) items.push(`${c.params[i]} (4 bytes) — parámetro apilado antes del BSR`);
+    return items;
+  }
+  function newStack(){
+    const numParams = Math.floor(Math.random()*3); // 0,1,2
+    const numRegs = 1 + Math.floor(Math.random()*4); // 1..4
+    const shuffledPool = stkRegPool.slice().sort(()=>Math.random()-0.5);
+    const regs = shuffledPool.slice(0, numRegs); // registros EN EL ORDEN ESCRITO en la instrucción
+    const params = Array.from({length:numParams}, (_,i)=>'PARAM'+(i+1));
+    const reserve = numRegs*4;
+    currentStack = {numParams, numRegs, regs, params, reserve, total:(numParams+1+numRegs)*4};
+    const c = currentStack;
+    const paramLines = params.map(p=>`  PEA      ${p}`).join('\n');
+    document.getElementById('stk-scenario').innerHTML =
+      `<span class="codebox" style="display:block;">PROGRAMA PRINCIPAL\n${paramLines? paramLines+'\n':''}  BSR      SUBR
+
+SUBR  ADDA.L  #-${c.reserve},A7
+      MOVEM.L ${c.regs.join('/')},(A7)   <span class="dim">; punto M, justo aquí</span></span>`+
+      `<br>¿Cuántos bytes hay ocupados en la pila en el punto M, contando desde el A7 actual hasta el A7 que tenía el programa principal antes de apilar ${numParams>0?'el primer parámetro':'nada (no hay parámetros)'}?`;
+    document.getElementById('stk-answer').value = '';
+    document.getElementById('stk-answer').classList.remove('ok','bad');
+    document.getElementById('stk-score').textContent = '—';
+    document.getElementById('stk-score').className = 'result-chip';
+    document.getElementById('stk-solution').innerHTML = stackSolutionList(c).map(li=>`<li>${li}</li>`).join('');
+    document.getElementById('stk-solution-wrap').open = false;
+  }
+  function checkStack(){
+    if(!currentStack) return;
+    const input = document.getElementById('stk-answer');
+    const ok = input.value.trim() === String(currentStack.total);
+    setField(input, ok);
+    const chip = document.getElementById('stk-score');
+    chip.textContent = ok ? 'correcto ('+currentStack.total+' bytes)' : 'revisa';
+    chip.className = 'result-chip ' + (ok?'ok':'bad');
+    document.getElementById('stk-solution-wrap').open = true;
+  }
+  newStack();
+
+  // ================= DIMENSIONAR PILA: A7 / TAMPILA =================
+  const dimSizes = [1024,2048,4096,8192]; // 1,2,4,8 KB
+  const dimVarTypes = [{t:'DS.B',sz:1},{t:'DS.W',sz:2},{t:'DS.L',sz:4}];
+  let currentDim = null;
+  function newDim(){
+    const ramSize = dimSizes[Math.floor(Math.random()*dimSizes.length)];
+    const leadNibble = baLeadNibbles[Math.floor(Math.random()*baLeadNibbles.length)];
+    const ramStart = ((leadNibble<<16) | 0) & 0xFFFFF; // aligned-ish base, times 0x1000 below
+    const ramStartAddr = ramStart<<12;
+    const ramEndAddr = (ramStartAddr + ramSize - 1) >>> 0;
+    const numVars = 2 + Math.floor(Math.random()*3); // 2..4
+    let totalVarBytes = 0;
+    const lines = [];
+    for(let i=0;i<numVars;i++){
+      const vt = dimVarTypes[Math.floor(Math.random()*dimVarTypes.length)];
+      const count = 1 + Math.floor(Math.random()*4);
+      totalVarBytes += vt.sz*count;
+      lines.push(`VAR${i+1}       ${vt.t}      ${count}`);
+    }
+    const a7 = (ramEndAddr + 1) >>> 0;
+    const tampila = ramSize - totalVarBytes;
+    currentDim = {ramSize, ramStartAddr, ramEndAddr, totalVarBytes, a7, tampila, lines};
+    document.getElementById('dim-scenario').innerHTML =
+      `La RAM va de <code class="hex">$${hex(ramStartAddr,8)}</code> a <code class="hex">$${hex(ramEndAddr,8)}</code> (${ramSize/1024} KB). Las variables se declaran justo al principio de esa RAM:`;
+    document.getElementById('dim-code').textContent =
+      `            ORG     $${hex(ramStartAddr,8)}\n` + lines.join('\n') + `\nPILA        DS.B    TAMPILA\nFINPILA`;
+    document.getElementById('dim-a7').value = '';
+    document.getElementById('dim-tampila').value = '';
+    document.querySelectorAll('#dim-a7,#dim-tampila').forEach(i=>i.classList.remove('ok','bad'));
+    document.getElementById('dim-score').textContent = '0/2';
+    document.getElementById('dim-score').className = 'result-chip';
+    document.getElementById('dim-solution-wrap').open = false;
+    document.getElementById('dim-solution').innerHTML = '';
+  }
+  function checkDim(){
+    if(!currentDim) return;
+    const c = currentDim;
+    const a7input = document.getElementById('dim-a7');
+    const tpInput = document.getElementById('dim-tampila');
+    const okA7 = normHex(a7input.value) === normHex(hex(c.a7,8));
+    const okTp = tpInput.value.trim() === String(c.tampila);
+    setField(a7input, okA7); setField(tpInput, okTp);
+    const correct = (okA7?1:0)+(okTp?1:0);
+    document.getElementById('dim-score').textContent = correct+'/2';
+    document.getElementById('dim-score').className = 'result-chip ' + (correct===2?'ok':'bad');
+    document.getElementById('dim-solution').innerHTML = `
+      <li><strong>A7 inicial</strong> = última dirección de la RAM + 1 = $${hex(c.ramEndAddr,8)} + 1 = $${hex(c.a7,8)}</li>
+      <li><strong>Bytes de variables</strong> = ${c.totalVarBytes} (suma de cada DS.x × su tamaño: .B=1, .W=2, .L=4)</li>
+      <li><strong>TAMPILA</strong> = tamaño de la RAM − bytes de variables = ${c.ramSize} − ${c.totalVarBytes} = ${c.tampila}</li>`;
+    document.getElementById('dim-solution-wrap').open = true;
+  }
+  newDim();
+
+  // ================= TRAZAR BUCLE EN ENSAMBLADOR =================
+  let currentTrace = null;
+  function newTrace(){
+    const n = 4 + Math.floor(Math.random()*3); // 4..6 bytes
+    const bytes = Array.from({length:n}, ()=>Math.floor(Math.random()*256));
+    const kind = ['suma','maximo','minimo'][Math.floor(Math.random()*3)];
+    let result;
+    if(kind==='suma') result = bytes.reduce((a,b)=>a+b,0) % 256;
+    else if(kind==='maximo') result = Math.max(...bytes);
+    else result = Math.min(...bytes);
+    currentTrace = {bytes, kind, result};
+    const bufferLine = 'BUFFER      DC.B    ' + bytes.map(b=>'$'+hex(b,2)).join(',');
+    let loopCode;
+    if(kind==='suma'){
+      loopCode =
+`            LEA     BUFFER,A0
+            MOVEQ   #0,D0
+            MOVE.W  #${n},D1
+BUCLE       MOVE.B  (A0)+,D2
+            ADD.B   D2,D0
+            SUBQ.W  #1,D1
+            BNE     BUCLE`;
+    } else if(kind==='maximo'){
+      loopCode =
+`            LEA     BUFFER,A0
+            MOVEQ   #0,D0
+            MOVE.W  #${n},D1
+BUCLE       MOVE.B  (A0)+,D2
+            CMP.B   D0,D2
+            BLS     SIGUE
+            MOVE.B  D2,D0
+SIGUE       SUBQ.W  #1,D1
+            BNE     BUCLE`;
+    } else {
+      loopCode =
+`            LEA     BUFFER,A0
+            MOVE.B  #$FF,D0
+            MOVE.W  #${n},D1
+BUCLE       MOVE.B  (A0)+,D2
+            CMP.B   D0,D2
+            BHS     SIGUE
+            MOVE.B  D2,D0
+SIGUE       SUBQ.W  #1,D1
+            BNE     BUCLE`;
+    }
+    document.getElementById('trc-code').textContent = bufferLine + '\n\n' + loopCode;
+    document.getElementById('trc-d0').value = '';
+    document.getElementById('trc-kind').value = '';
+    document.querySelectorAll('#trc-d0').forEach(i=>i.classList.remove('ok','bad'));
+    document.getElementById('trc-score').textContent = '0/2';
+    document.getElementById('trc-score').className = 'result-chip';
+    document.getElementById('trc-solution-wrap').open = false;
+  }
+  function checkTrace(){
+    if(!currentTrace) return;
+    const c = currentTrace;
+    const d0input = document.getElementById('trc-d0');
+    const kindSel = document.getElementById('trc-kind');
+    const okD0 = normHex(d0input.value) === normHex(hex(c.result,2));
+    const okKind = kindSel.value === c.kind;
+    setField(d0input, okD0);
+    kindSel.classList.remove('ok','bad'); kindSel.classList.add(okKind?'ok':'bad');
+    const correct = (okD0?1:0)+(okKind?1:0);
+    document.getElementById('trc-score').textContent = correct+'/2';
+    document.getElementById('trc-score').className = 'result-chip ' + (correct===2?'ok':'bad');
+    const kindLabel = {suma:'acumulador (suma de los bytes, con posible desbordamiento mod 256)', maximo:'el valor máximo del buffer', minimo:'el valor mínimo del buffer'}[c.kind];
+    document.getElementById('trc-solution').textContent =
+      `Buffer: ${c.bytes.map(b=>'$'+hex(b,2)).join(', ')} → la rutina calcula ${kindLabel} → D0 final = $${hex(c.result,2)}`;
+    document.getElementById('trc-solution-wrap').open = true;
+  }
+  newTrace();
+
+  // ================= ANÁLISIS DE C =================
+  let currentC = null;
+  function newC(){
+    const varAInit = 2 + Math.floor(Math.random()*8); // 2..9
+    const varBInit = Math.floor(Math.random()*20); // 0..19, irrelevante al resultado
+    const finalVarA = varAInit;
+    const finalVarB = varAInit*varAInit;
+    currentC = {varAInit, varBInit, finalVarA, finalVarB};
+    document.getElementById('c-code').textContent =
+`void funcionA(int varA, int *puntB) {
+    int aux = varA;
+    varA += *puntB;
+    *puntB = aux * aux;
+}
+
+int varA = ${varAInit};
+int varB = ${varBInit};
+funcionA(varA, &varB);`;
+    document.getElementById('c-vara').value = '';
+    document.getElementById('c-varb').value = '';
+    document.querySelectorAll('#c-vara,#c-varb').forEach(i=>i.classList.remove('ok','bad'));
+    document.getElementById('c-score').textContent = '0/2';
+    document.getElementById('c-score').className = 'result-chip';
+    document.getElementById('c-solution-wrap').open = false;
+  }
+  function checkC(){
+    if(!currentC) return;
+    const c = currentC;
+    const aInput = document.getElementById('c-vara');
+    const bInput = document.getElementById('c-varb');
+    const okA = aInput.value.trim() === String(c.finalVarA);
+    const okB = bInput.value.trim() === String(c.finalVarB);
+    setField(aInput, okA); setField(bInput, okB);
+    const correct = (okA?1:0)+(okB?1:0);
+    document.getElementById('c-score').textContent = correct+'/2';
+    document.getElementById('c-score').className = 'result-chip ' + (correct===2?'ok':'bad');
+    document.getElementById('c-solution').innerHTML = `
+      <li><code>varA</code> se pasa <strong>por valor</strong>: dentro de la función es una copia (empieza en ${c.varAInit}). Lo que le pase ahí NO toca la variable <code>varA</code> del main → sigue siendo <strong>${c.finalVarA}</strong>.</li>
+      <li><code>aux = varA</code> → aux = ${c.varAInit}.</li>
+      <li><code>varA += *puntB</code> → la copia local pasa a ${c.varAInit}+${c.varBInit}=${c.varAInit+c.varBInit}, pero esto se pierde al salir (no afecta al main).</li>
+      <li><code>*puntB = aux*aux</code> → como <code>puntB</code> apunta a <code>varB</code> del main, esto SÍ la cambia: varB = ${c.varAInit}×${c.varAInit} = <strong>${c.finalVarB}</strong> (pisa su valor inicial ${c.varBInit}).</li>`;
+    document.getElementById('c-solution-wrap').open = true;
+  }
+  newC();
+
+  // ================= QUIZ =================
+  const bank = [
+    {q:'¿Qué significa ENABLE=1 en un registro CSBRn?', a:['Se habilita el uso de la salida CSn#.','Se activa el modo supervisor.','Se selecciona la RAM interna.','Se fuerza un reset del módulo SIM.'], c:0, e:'ENABLE habilita o inhabilita el uso de esa salida de selección de chip; no tiene relación con el modo de acceso ni con la RAM interna.'},
+    {q:'El campo BAM de CSORn sirve para…', a:['Fijar el número de estados de espera.', 'Indicar si la memoria es de solo lectura.', 'Enmascarar qué bits de la dirección base se comparan (a 1 se comparan).', 'Seleccionar el ancho del bus de datos.'], c:2, e:'BAM marca con 1 los bits de BA que se comparan realmente; los bits a 0 quedan libres y definen el tamaño del bloque direccionable.'},
+    {q:'¿Qué registro hay que configurar para habilitar la RAM interna del MCF5272?', a:['ROMBAR','MBAR','RAMBAR','CSBR0'], c:2, e:'RAMBAR define la base y habilita (V=1) la RAM local interna del microcontrolador.'},
+    {q:'¿Qué tamaño fijo tiene la RAM interna del MCF5272?', a:['4 KB','16 KB','64 KB','256 KB'], c:0, e:'La RAM local interna del MCF5272 es siempre de 4 KB, sea cual sea su dirección base.'},
+    {q:'¿Qué tamaño de ventana de direcciones asigna MBAR al módulo SIM?', a:['4 KB','16 KB','64 KB','1 MB'], c:2, e:'El campo BA de MBAR ocupa los 16 bits superiores, dejando una ventana fija de 64 KB para los registros internos del SIM.'},
+    {q:'Tras el reset, ¿a qué dispositivo da acceso típicamente CS0#?', a:['A la RAM interna.', 'A la ROM de arranque del sistema.', 'Al módulo SIM.', 'A ningún dispositivo hasta configurarlo por software.'], c:1, e:'CS0# es la única salida de selección de chip habilitada automáticamente tras el reset, y da acceso a la ROM que contiene el código de arranque.'},
+    {q:'Si MRW=1 en CSORn, ¿qué determina si la memoria es de solo lectura o solo escritura?', a:['El campo BAM.', 'El campo WS.', 'El campo RW.', 'El campo SUPER de CSBRn.'], c:2, e:'Con MRW=1, el bit RW decide: RW=0 solo lectura, RW=1 solo escritura. Con MRW=0, el dispositivo admite lectura y escritura y RW no importa.'},
+    {q:'¿Cuántas salidas de selección de chip programables tiene el módulo SIM del MCF5272?', a:['4 (CS0#-CS3#)','6 (CS0#-CS5#)','8 (CS0#-CS7#)','16 (CS0#-CS15#)'], c:2, e:'El módulo de selección de chip ofrece 8 salidas, CS0# a CS7#, cada una con su par de registros CSBRn/CSORn.'},
+    {q:'Los bits altos de la dirección (31-23) en un acceso externo quedan determinados por…', a:['El campo BW de CSBRn.', 'La señal CSn# que está activa en ese acceso.', 'El registro ROMBAR siempre.', 'El valor de SUPER.'], c:1, e:'Cada CSn# activo fija los bits superiores de la dirección; por eso BA/BAM solo necesitan cubrir los bits 31-12 relevantes al bloque.'},
+    {q:'SUPER=1 en CSBRn implica que…', a:['El dispositivo queda deshabilitado permanentemente.', 'CSn# solo se activa en accesos de modo supervisor.', 'El bus pasa a modo SDRAM.', 'Se duplica el tamaño del bloque de memoria.'], c:1, e:'SUPER restringe la activación de esa CSn# a los accesos realizados en modo supervisor del procesador.'},
+    {q:'¿Qué apila exactamente la instrucción PEA etiqueta?', a:['El contenido (valor) de la variable etiqueta.', 'La dirección de memoria de etiqueta.', 'El PC de retorno.', 'Nada, PEA no toca la pila.'], c:1, e:'PEA apila la DIRECCIÓN del operando (como LEA, pero metiéndola en la pila), no su contenido. Por eso se usa para pasar parámetros por dirección.'},
+    {q:'¿Para qué modo de direccionamiento se usa típicamente al "meter" (push) un dato en la pila?', a:['Postincremento (An)+', 'Predecremento -(An)', 'Indexado N(An,Rm*s)', 'Relativo a PC N(PC)'], c:1, e:'-(An) decrementa primero el puntero y luego escribe ahí: así A7 siempre señala al último dato apilado. (An)+ es el que se usa para sacar (pop).'},
+    {q:'MOVEM.L D2/D0/A3,(A7) guarda los registros en la pila en qué orden real…', a:['El orden escrito: D2, D0, A3.', 'Siempre D0...D7, A0...A7, sin importar el orden escrito.', 'Orden alfabético.', 'El orden inverso al escrito.'], c:1, e:'MOVEM siempre procesa los registros en el orden fijo D0→D7, A0→A7, independientemente de cómo los liste la instrucción.'},
+    {q:'Justo antes de un RTS, ¿qué debe hacer una subrutina que reservó espacio local con ADDA.L #-12,A7 al entrar?', a:['Nada, RTS limpia la pila automáticamente.', 'Ejecutar ADDA.L #12,A7 (u operación equivalente) para liberar esos 12 bytes.', 'Ejecutar otro ADDA.L #-12,A7.', 'Hacer MOVEM.L (A7)+,D0-D7/A0-A7.'], c:1, e:'Hay que devolver A7 a su valor anterior al reservar el espacio local, o RTS leerá como "dirección de retorno" un byte que no lo es.'},
+    {q:'DIVU.W D1,D0 (división de palabra) deja el resultado en D0 como…', a:['Cociente en los 32 bits de D0.', 'Cociente en los 16 bits bajos, resto en los 16 bits altos.', 'Resto en los 16 bits bajos, cociente en los 16 bits altos.', 'Cociente y resto en registros separados automáticamente.'], c:1, e:'En la división de palabra (.W), D0 queda partido en dos mitades de 16 bits: la baja con el cociente y la alta con el resto.'},
+  ];
+  let order=[], qi=0, score=0;
+  function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+  function restartQuiz(){
+    order = shuffle(bank.map((_,i)=>i));
+    qi=0; score=0;
+    document.getElementById('q-total').textContent = bank.length;
+    document.getElementById('q-score').textContent = score;
+    renderQuestion();
+  }
+  function renderQuestion(){
+    const item = bank[order[qi]];
+    document.getElementById('q-index').textContent = qi+1;
+    document.getElementById('q-text').textContent = item.q;
+    const optOrder = shuffle(item.a.map((_,i)=>i));
+    const optsEl = document.getElementById('q-opts');
+    optsEl.innerHTML='';
+    document.getElementById('q-explain').style.display='none';
+    document.getElementById('q-next').style.display='none';
+    optOrder.forEach(idx=>{
+      const b = document.createElement('button');
+      b.className='quiz-opt';
+      b.textContent = item.a[idx];
+      b.onclick = ()=>answer(idx, item, b, optsEl);
+      optsEl.appendChild(b);
+    });
+  }
+  function answer(idx, item, btn, optsEl){
+    const buttons = Array.from(optsEl.children);
+    buttons.forEach(b=>b.disabled=true);
+    if(idx===item.c){ btn.classList.add('correct'); score++; }
+    else {
+      btn.classList.add('incorrect');
+      buttons.forEach(b=>{ if(b.textContent===item.a[item.c]) b.classList.add('correct'); });
+    }
+    document.getElementById('q-score').textContent = score;
+    const exp = document.getElementById('q-explain');
+    exp.textContent = item.e; exp.style.display='block';
+    document.getElementById('q-next').style.display = (qi < order.length-1) ? 'inline-block' : 'none';
+  }
+  function nextQuestion(){ qi++; renderQuestion(); }
+  restartQuiz();
+</script>
